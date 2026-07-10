@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
 import { io } from 'socket.io-client';
 import ExpenseFormModal from '@/components/expenses/ExpenseFormModal';
@@ -9,7 +9,7 @@ import BalancesModal from '@/components/settlements/BalancesModal';
 let socket;
 
 export default function FlatFeed({ params }) {
-  const { id } = params;
+  const { id } = use(params);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [myUser, setMyUser] = useState(null);
