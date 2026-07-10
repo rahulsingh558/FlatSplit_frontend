@@ -1,6 +1,17 @@
-/** @type {import('next').NextConfig} */
+import withPWAInit from 'next-pwa';
+
+const withPWA = withPWAInit({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true
+});
+
 const nextConfig = {
-  /* config options here */
+  allowedDevOrigins: ['flatsplit.meals4heal.in', 'letter-examined-sheffield-brunswick.trycloudflare.com'],
+  devIndicators: {
+    buildActivity: false,
+  },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
