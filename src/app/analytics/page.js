@@ -26,23 +26,33 @@ ChartJS.register(
 export default function Analytics() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myUser, setMyUser] = useState(null);
 
   useEffect(() => {
-    fetchExpenses();
+    fetchUserAndExpenses();
   }, []);
 
-  const fetchExpenses = async () => {
+  const fetchUserAndExpenses = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/me`, {
+      const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/me`, {
         credentials: 'include'
       });
-      if (res.status === 401) {
+      if (userRes.status === 401) {
         window.location.href = '/login';
         return;
       }
-      const data = await res.json();
-      if (data.success) {
-        setExpenses(data.data);
+      const userData = await userRes.json();
+      if (userData.success) {
+        setMyUser(userData.data);
+      }
+
+      const expRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/me`, {
+        credentials: 'include'
+      });
+      const expData = await expRes.json();
+      if (expData.success) {
+        setExpenses(expData.data);
       }
     } catch (err) {
       console.error(err);
@@ -51,13 +61,25 @@ export default function Analytics() {
     }
   };
 
-  // 1. Calculate Total Spend
-  const totalSpend = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+  // Helper to get user's share of an expense
+  const getUserShare = (exp) => {
+    if (!myUser) return 0;
+    const split = exp.splitAmong?.find(s => 
+      s.user === myUser._id || s.user?._id === myUser._id
+    );
+    return split ? split.amount : 0;
+  };
+
+  // 1. Calculate Total Spend (User's share)
+  const totalSpend = expenses.reduce((acc, curr) => acc + getUserShare(curr), 0);
 
   // 2. Data for Category Pie Chart
   const categoryMap = {};
   expenses.forEach(exp => {
-    categoryMap[exp.category] = (categoryMap[exp.category] || 0) + exp.amount;
+    const share = getUserShare(exp);
+    if (share > 0) {
+      categoryMap[exp.category] = (categoryMap[exp.category] || 0) + share;
+    }
   });
   
   const categoryData = {
@@ -76,9 +98,12 @@ export default function Analytics() {
   // 3. Data for Monthly Bar Chart
   const monthMap = {};
   expenses.forEach(exp => {
-    const date = new Date(exp.date);
-    const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
-    monthMap[monthYear] = (monthMap[monthYear] || 0) + exp.amount;
+    const share = getUserShare(exp);
+    if (share > 0) {
+      const date = new Date(exp.date);
+      const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+      monthMap[monthYear] = (monthMap[monthYear] || 0) + share;
+    }
   });
 
   const barData = {

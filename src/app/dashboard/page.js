@@ -76,6 +76,25 @@ export default function Dashboard() {
     <div className="flex-col gap-3">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-h5" style={{ margin: 0 }}>Chats</h1>
+        <button 
+          onClick={() => {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                  registration.unregister();
+                }
+                window.location.reload(true);
+              });
+            } else {
+              window.location.reload(true);
+            }
+          }}
+          className="md-btn-text" 
+          style={{ color: 'var(--md-text-secondary)', padding: '8px', minWidth: '40px', borderRadius: '50%' }}
+          title="Refresh App"
+        >
+          <span className="material-icons" style={{ fontSize: '24px' }}>refresh</span>
+        </button>
       </div>
 
       <h2 className="text-overline" style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--md-text-secondary)', marginBottom: '8px' }}>

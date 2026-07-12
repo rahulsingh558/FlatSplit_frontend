@@ -8,24 +8,34 @@ export default function Reports() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [myUser, setMyUser] = useState(null);
   const reportRef = useRef(null);
 
   useEffect(() => {
-    fetchExpenses();
+    fetchUserAndExpenses();
   }, []);
 
-  const fetchExpenses = async () => {
+  const fetchUserAndExpenses = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/me`, {
+      const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/me`, {
         credentials: 'include'
       });
-      if (res.status === 401) {
+      if (userRes.status === 401) {
         window.location.href = '/login';
         return;
       }
-      const data = await res.json();
-      if (data.success) {
-        setExpenses(data.data);
+      const userData = await userRes.json();
+      if (userData.success) {
+        setMyUser(userData.data);
+      }
+
+      const expRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/me`, {
+        credentials: 'include'
+      });
+      const expData = await expRes.json();
+      if (expData.success) {
+        setExpenses(expData.data);
       }
     } catch (err) {
       console.error(err);
@@ -58,7 +68,16 @@ export default function Reports() {
 
   if (loading) return <div className="p-4 text-center">Loading reports...</div>;
 
-  const totalSpend = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const getUserShare = (exp) => {
+    if (!myUser) return 0;
+    const split = exp.splitAmong?.find(s => 
+      s.user === myUser._id || s.user?._id === myUser._id
+    );
+    return split ? split.amount : 0;
+  };
+
+  const relevantExpenses = expenses.filter(exp => getUserShare(exp) > 0);
+  const totalSpend = relevantExpenses.reduce((acc, curr) => acc + getUserShare(curr), 0);
 
   return (
     <div className="flex-col gap-4 pb-20">
@@ -66,7 +85,7 @@ export default function Reports() {
         <h1 className="text-h5" style={{ margin: 0 }}>Monthly Reports</h1>
         <button 
           onClick={generatePDF} 
-          disabled={isGenerating || expenses.length === 0}
+          disabled={isGenerating || relevantExpenses.length === 0}
           className="md-btn md-btn-contained flex items-center gap-2"
         >
           <span className="material-icons" style={{ fontSize: '18px' }}>download</span>
@@ -107,21 +126,21 @@ export default function Reports() {
               </tr>
             </thead>
             <tbody>
-              {expenses.length === 0 ? (
+              {relevantExpenses.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ padding: '16px', textAlign: 'center', border: '1px solid #ddd' }}>
                     No expenses found for this period.
                   </td>
                 </tr>
               ) : (
-                expenses.map(exp => (
+                relevantExpenses.map(exp => (
                   <tr key={exp._id} style={{ borderBottom: '1px solid #ddd' }}>
                     <td style={{ padding: '12px', border: '1px solid #ddd' }}>{new Date(exp.date).toLocaleDateString()}</td>
                     <td style={{ padding: '12px', border: '1px solid #ddd' }}>{exp.flat?.name || 'Unknown'}</td>
                     <td style={{ padding: '12px', border: '1px solid #ddd' }}>{exp.title}</td>
                     <td style={{ padding: '12px', border: '1px solid #ddd', textTransform: 'capitalize' }}>{exp.category}</td>
                     <td style={{ padding: '12px', border: '1px solid #ddd' }}>{exp.paidBy?.name || 'Unknown'}</td>
-                    <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold' }}>₹{exp.amount}</td>
+                    <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'right', fontWeight: 'bold' }}>₹{getUserShare(exp).toFixed(2)}</td>
                   </tr>
                 ))
               )}
