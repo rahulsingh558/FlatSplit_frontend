@@ -19,6 +19,9 @@ export default function DirectMessageFeed() {
   const [inputText, setInputText] = useState('');
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [sharedExpenses, setSharedExpenses] = useState({ groupExpenses: [], personalExpenses: [] });
+  const [showExpenses, setShowExpenses] = useState(false);
+  const [expensesLoading, setExpensesLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -104,8 +107,28 @@ export default function DirectMessageFeed() {
       if (msgsData.success) {
         setMessages(msgsData.data);
       }
+
+      // 4. Fetch shared expenses between the two users
+      fetchSharedExpenses();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchSharedExpenses = async () => {
+    setExpensesLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/flat/${flatId}/between/${targetUserId}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSharedExpenses(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching shared expenses:', err);
+    } finally {
+      setExpensesLoading(false);
     }
   };
 
@@ -158,7 +181,42 @@ export default function DirectMessageFeed() {
     return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Calculate net balance between the two users
+  const calculateNetBalance = () => {
+    let balance = 0; // positive = target owes me, negative = I owe target
+    
+    // From group expenses
+    sharedExpenses.groupExpenses.forEach(exp => {
+      const isPaidByMe = exp.paidBy?._id === myUser?._id;
+      if (isPaidByMe) {
+        // I paid, target owes their share
+        const targetShare = exp.splitAmong?.find(s => 
+          (s.user === targetUserId || s.user?._id === targetUserId)
+        );
+        if (targetShare) balance += targetShare.amount;
+      } else if (exp.paidBy?._id === targetUserId) {
+        // Target paid, I owe my share
+        const myShare = exp.splitAmong?.find(s => 
+          (s.user === myUser?._id || s.user?._id === myUser?._id)
+        );
+        if (myShare) balance -= myShare.amount;
+      }
+    });
+    
+    // From personal expenses
+    sharedExpenses.personalExpenses.forEach(exp => {
+      if (exp.paidBy?._id === myUser?._id) {
+        balance += exp.owedAmount;
+      } else {
+        balance -= exp.owedAmount;
+      }
+    });
+
+    return balance;
+  };
+
   const isTyping = Array.from(typingUsers).filter(uid => uid !== myUser?._id).length > 0;
+  const totalSharedCount = sharedExpenses.groupExpenses.length + sharedExpenses.personalExpenses.length;
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1200, backgroundColor: 'var(--md-background)', display: 'flex', flexDirection: 'column' }}>
@@ -184,7 +242,209 @@ export default function DirectMessageFeed() {
             {flat ? flat.name : ''}
           </div>
         </div>
+        {/* Expenses toggle button */}
+        <button 
+          onClick={() => setShowExpenses(!showExpenses)} 
+          className="md-btn-text" 
+          style={{ 
+            color: showExpenses ? 'var(--md-primary)' : 'var(--md-text-primary)', 
+            padding: '8px', minWidth: '40px',
+            position: 'relative'
+          }}
+        >
+          <span className="material-icons">receipt_long</span>
+          {totalSharedCount > 0 && (
+            <span style={{
+              position: 'absolute', top: '4px', right: '4px',
+              width: '18px', height: '18px', borderRadius: '50%',
+              backgroundColor: 'var(--md-error)', color: 'white',
+              fontSize: '0.65rem', fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {totalSharedCount}
+            </span>
+          )}
+        </button>
       </header>
+
+      {/* Shared Expenses Panel */}
+      {showExpenses && (
+        <div style={{
+          backgroundColor: 'var(--md-surface)',
+          borderBottom: '1px solid var(--md-divider)',
+          maxHeight: '60vh',
+          overflowY: 'auto',
+          animation: 'slideDown 0.25s ease'
+        }}>
+          {/* Net Balance Summary */}
+          {myUser && totalSharedCount > 0 && (() => {
+            const netBalance = calculateNetBalance();
+            return (
+              <div style={{
+                padding: '16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderBottom: '1px solid var(--md-divider)',
+                background: netBalance >= 0 
+                  ? 'linear-gradient(135deg, rgba(3, 218, 198, 0.08), rgba(3, 218, 198, 0.02))'
+                  : 'linear-gradient(135deg, rgba(207, 102, 121, 0.08), rgba(207, 102, 121, 0.02))'
+              }}>
+                <div>
+                  <div className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '2px' }}>
+                    Net Balance
+                  </div>
+                  <div className="text-subtitle1" style={{ 
+                    color: netBalance >= 0 ? 'var(--md-secondary-variant)' : 'var(--md-error)',
+                    fontWeight: 600
+                  }}>
+                    {netBalance >= 0 
+                      ? `${targetUser?.name?.split(' ')[0]} owes you ₹${Math.abs(netBalance).toFixed(2)}`
+                      : `You owe ${targetUser?.name?.split(' ')[0]} ₹${Math.abs(netBalance).toFixed(2)}`
+                    }
+                  </div>
+                </div>
+                <span className="material-icons" style={{ 
+                  color: netBalance >= 0 ? 'var(--md-secondary-variant)' : 'var(--md-error)',
+                  fontSize: '28px'
+                }}>
+                  {netBalance >= 0 ? 'trending_up' : 'trending_down'}
+                </span>
+              </div>
+            );
+          })()}
+
+          {expensesLoading ? (
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <span className="text-body2" style={{ color: 'var(--md-text-secondary)' }}>Loading expenses...</span>
+            </div>
+          ) : totalSharedCount === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <span className="material-icons" style={{ fontSize: '40px', color: 'var(--md-text-disabled)', marginBottom: '8px', display: 'block' }}>receipt_long</span>
+              <span className="text-body2" style={{ color: 'var(--md-text-secondary)' }}>No shared expenses yet</span>
+            </div>
+          ) : (
+            <div style={{ padding: '12px' }}>
+              {/* Group Expenses Section */}
+              {sharedExpenses.groupExpenses.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div className="text-overline" style={{ 
+                    fontSize: '0.65rem', fontWeight: 600, letterSpacing: '1.5px', 
+                    textTransform: 'uppercase', color: 'var(--md-text-secondary)', 
+                    marginBottom: '8px', padding: '0 4px'
+                  }}>
+                    Group Expenses ({sharedExpenses.groupExpenses.length})
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {sharedExpenses.groupExpenses.map(exp => {
+                      const isPaidByMe = exp.paidBy?._id === myUser?._id;
+                      const myShare = exp.splitAmong?.find(s => 
+                        (s.user === myUser?._id || s.user?._id === myUser?._id)
+                      );
+                      const targetShare = exp.splitAmong?.find(s => 
+                        (s.user === targetUserId || s.user?._id === targetUserId)
+                      );
+                      
+                      return (
+                        <div key={exp._id} style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '10px 12px', borderRadius: '10px',
+                          backgroundColor: 'var(--md-background)',
+                          border: '1px solid var(--md-divider)'
+                        }}>
+                          <div style={{
+                            width: '36px', height: '36px', borderRadius: '50%',
+                            backgroundColor: 'rgba(98, 0, 238, 0.1)', color: 'var(--md-primary)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                          }}>
+                            <span className="material-icons" style={{ fontSize: '18px' }}>group</span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="text-body2" style={{ 
+                              fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' 
+                            }}>
+                              {exp.title}
+                            </div>
+                            <div className="text-caption" style={{ color: 'var(--md-text-secondary)' }}>
+                              Paid by {isPaidByMe ? 'you' : exp.paidBy?.name?.split(' ')[0]} · {new Date(exp.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ 
+                              fontSize: '0.85rem', fontWeight: 600,
+                              color: exp.status === 'closed' ? 'var(--md-text-disabled)' : 'var(--md-primary)',
+                              textDecoration: exp.status === 'closed' ? 'line-through' : 'none'
+                            }}>
+                              ₹{exp.amount}
+                            </div>
+                            <div className="text-caption" style={{ color: 'var(--md-text-secondary)', fontSize: '0.65rem' }}>
+                              Your share: ₹{myShare?.amount?.toFixed(2) || '0'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Personal Expenses Section */}
+              {sharedExpenses.personalExpenses.length > 0 && (
+                <div>
+                  <div className="text-overline" style={{ 
+                    fontSize: '0.65rem', fontWeight: 600, letterSpacing: '1.5px', 
+                    textTransform: 'uppercase', color: 'var(--md-text-secondary)', 
+                    marginBottom: '8px', padding: '0 4px'
+                  }}>
+                    Personal Expenses ({sharedExpenses.personalExpenses.length})
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {sharedExpenses.personalExpenses.map(exp => {
+                      const isPaidByMe = exp.paidBy?._id === myUser?._id;
+                      
+                      return (
+                        <div key={exp._id} style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '10px 12px', borderRadius: '10px',
+                          backgroundColor: 'var(--md-background)',
+                          border: '1px solid var(--md-divider)'
+                        }}>
+                          <div style={{
+                            width: '36px', height: '36px', borderRadius: '50%',
+                            backgroundColor: isPaidByMe ? 'rgba(3, 218, 198, 0.1)' : 'rgba(207, 102, 121, 0.1)',
+                            color: isPaidByMe ? 'var(--md-secondary-variant)' : 'var(--md-error)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                          }}>
+                            <span className="material-icons" style={{ fontSize: '18px' }}>
+                              {isPaidByMe ? 'call_made' : 'call_received'}
+                            </span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="text-body2" style={{ 
+                              fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' 
+                            }}>
+                              {exp.title}
+                            </div>
+                            <div className="text-caption" style={{ color: 'var(--md-text-secondary)' }}>
+                              {isPaidByMe ? `You paid` : `${exp.paidBy?.name?.split(' ')[0]} paid`} · {new Date(exp.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ 
+                              fontSize: '0.85rem', fontWeight: 600,
+                              color: isPaidByMe ? 'var(--md-secondary-variant)' : 'var(--md-error)'
+                            }}>
+                              {isPaidByMe ? '+' : '-'}₹{exp.owedAmount}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Feed Area */}
       <div style={{ flex: '1 1 0%', overflowY: 'auto', padding: '16px 16px 80px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -365,11 +625,19 @@ export default function DirectMessageFeed() {
         targetUser={targetUser}
         onSubmitSuccess={(newMsg) => {
           setMessages(prev => [...prev, newMsg]);
+          fetchSharedExpenses(); // Refresh shared expenses
           if (socket) {
             socket.emit('new-direct-message', { ...newMsg, flatId, receiverId: targetUserId });
           }
         }}
       />
+
+      <style jsx>{`
+        @keyframes slideDown {
+          from { max-height: 0; opacity: 0; }
+          to { max-height: 60vh; opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
