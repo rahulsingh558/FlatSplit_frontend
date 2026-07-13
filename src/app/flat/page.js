@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import { io } from 'socket.io-client';
 import ExpenseFormModal from '@/components/expenses/ExpenseFormModal';
 import BalancesModal from '@/components/settlements/BalancesModal';
@@ -12,9 +13,9 @@ import SplitBreakdownModal from '@/components/expenses/SplitBreakdownModal';
 
 let socket;
 
-export default function FlatFeed() {
-  const params = useParams();
-  const id = params?.id;
+function FlatFeedContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [myUser, setMyUser] = useState(null);
@@ -565,5 +566,13 @@ export default function FlatFeed() {
         }}
       />
     </div>
+  );
+}
+
+export default function FlatFeed() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <FlatFeedContent />
+    </Suspense>
   );
 }

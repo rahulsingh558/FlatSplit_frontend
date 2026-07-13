@@ -8,6 +8,10 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig = {
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
   allowedDevOrigins: ['flatsplit.meals4heal.in', 'letter-examined-sheffield-brunswick.trycloudflare.com'],
   devIndicators: {
     buildActivity: false,

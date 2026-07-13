@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import { io } from 'socket.io-client';
 import PersonalExpenseFormModal from '@/components/expenses/PersonalExpenseFormModal';
 
 let socket;
 
-export default function DirectMessageFeed() {
-  const { id: flatId, userId: targetUserId } = useParams();
+function DirectMessageFeedContent() {
+  const searchParams = useSearchParams();
+  const flatId = searchParams.get('flatId');
+  const targetUserId = searchParams.get('userId');
   const router = useRouter();
   
   const [flat, setFlat] = useState(null);
@@ -639,5 +642,13 @@ export default function DirectMessageFeed() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function DirectMessageFeed() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <DirectMessageFeedContent />
+    </Suspense>
   );
 }

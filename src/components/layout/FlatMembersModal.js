@@ -136,7 +136,7 @@ export default function FlatMembersModal({ isOpen, onClose, flat, myUser }) {
                   {myUser && member.user._id !== myUser._id && (
                     <>
                       <Link 
-                        href={`/feed/flat/${flat._id}/user/${member.user._id}`}
+                        href={`/user?flatId=${flat._id}&userId=${member.user._id}`}
                         className="md-btn-text" 
                         style={{ color: 'var(--color-primary)', padding: '6px', minWidth: 'auto', display: 'flex', alignItems: 'center' }}
                         title="Personal chat"

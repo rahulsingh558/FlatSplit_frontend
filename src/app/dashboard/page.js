@@ -120,7 +120,7 @@ export default function Dashboard() {
       ) : (
         <div className="flex flex-col gap-2">
           {flats.map(flat => (
-            <Link href={`/feed/flat/${flat._id}`} key={flat._id}>
+            <Link href={`/flat?id=${flat._id}`} key={flat._id}>
               <div className="md-card interactive flex items-center justify-between" style={{ padding: '14px 16px' }}>
                 
                 <div className="flex items-center gap-2" style={{ gap: '14px' }}>

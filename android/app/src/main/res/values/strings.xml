@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FlatSplit</string>
+    <string name="title_activity_main">FlatSplit</string>
+    <string name="package_name">com.flatsplit.app</string>
+    <string name="custom_url_scheme">com.flatsplit.app</string>
+</resources>
