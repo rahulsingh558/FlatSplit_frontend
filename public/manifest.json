@@ -15,7 +15,12 @@
     {
       "src": "/icons/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
     }
   ],
   "share_target": {
