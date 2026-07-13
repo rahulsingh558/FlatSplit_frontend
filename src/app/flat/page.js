@@ -545,7 +545,7 @@ function FlatFeedContent() {
         flat={flat}
         isCreator={myUser && flat && flat.createdBy?._id === myUser._id}
         isAdmin={myUser && flat && flat.members.some(m => m.user._id === myUser._id && m.role === 'admin')}
-        onFlatUpdated={(newName) => setFlat(prev => ({ ...prev, name: newName }))}
+        onFlatUpdated={(newName, newSettlementType) => setFlat(prev => ({ ...prev, name: newName, settlementType: newSettlementType }))}
         onFlatDeleted={() => router.push('/dashboard')}
       />
 

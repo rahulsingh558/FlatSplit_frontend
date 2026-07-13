@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, isAdmin, onFlatUpdated, onFlatDeleted }) {
   const [name, setName] = useState(flat?.name || '');
+  const [settlementType, setSettlementType] = useState(flat?.settlementType || 'overall');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -17,12 +18,12 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, settlementType })
       });
       const data = await res.json();
       
       if (data.success) {
-        onFlatUpdated(name);
+        onFlatUpdated(name, settlementType);
         onClose();
       } else {
         alert(data.error);
@@ -80,6 +81,24 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
                 />
               </div>
 
+              <div>
+                <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Settlement Type</label>
+                <select 
+                  className="md-input"
+                  value={settlementType}
+                  onChange={e => setSettlementType(e.target.value)}
+                  disabled={!isAdmin && !isCreator}
+                >
+                  <option value="overall">Overall Settlement (Simplify Debts)</option>
+                  <option value="one-to-one">One-to-One (Detailed Peer-to-Peer)</option>
+                </select>
+                <p className="text-caption mt-1" style={{ color: 'var(--color-text-tertiary)' }}>
+                  {settlementType === 'overall' 
+                    ? "Calculates minimum transactions needed to settle all group debts." 
+                    : "Maintains exact debts based on who paid for whom, without simplifying."}
+                </p>
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {isCreator && (
                   <button 
@@ -93,7 +112,7 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
                 )}
                 
                 {(isAdmin || isCreator) ? (
-                  <button type="submit" className="md-btn md-btn-contained" disabled={loading || name === flat?.name} style={{ marginLeft: 'auto' }}>
+                  <button type="submit" className="md-btn md-btn-contained" disabled={loading || (name === flat?.name && settlementType === (flat?.settlementType || 'overall'))} style={{ marginLeft: 'auto' }}>
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
                 ) : (
