@@ -8,7 +8,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig = {
-  output: 'export',
+  output: process.env.CAPACITOR_BUILD ? 'export' : undefined,
   images: {
     unoptimized: true,
   },
