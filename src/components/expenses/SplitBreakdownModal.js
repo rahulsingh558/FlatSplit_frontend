@@ -82,9 +82,130 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
     return name.charAt(0).toUpperCase();
   };
 
+  const getCalculatedAmounts = () => {
+    const totalAmount = parseFloat(editAmount) || 0;
+    const finalAmounts = {};
+    
+    if (editSplitType === 'equal') {
+      const splitAmt = totalAmount / (editSelectedMembers.length || 1);
+      editSelectedMembers.forEach(id => {
+        finalAmounts[id] = splitAmt;
+      });
+      return finalAmounts;
+    }
+    
+    if (editSplitType === 'custom') {
+      let sumEntered = 0;
+      const membersWithInput = [];
+      const membersWithoutInput = [];
+      
+      editSelectedMembers.forEach(id => {
+        const rawVal = editCustomAmounts[id];
+        const val = parseFloat(rawVal);
+        if (rawVal !== undefined && rawVal !== '' && !isNaN(val)) {
+          membersWithInput.push({ id, val });
+        } else {
+          membersWithoutInput.push(id);
+        }
+      });
+      
+      membersWithInput.forEach(m => {
+        sumEntered += m.val;
+        finalAmounts[m.id] = m.val;
+      });
+      
+      const remainingAmt = totalAmount - sumEntered;
+      if (membersWithoutInput.length > 0) {
+        const splitAmt = Math.max(0, remainingAmt) / membersWithoutInput.length;
+        membersWithoutInput.forEach(id => {
+          finalAmounts[id] = splitAmt;
+        });
+      }
+      return finalAmounts;
+    }
+    
+    if (editSplitType === 'percentage') {
+      let sumEntered = 0;
+      const membersWithInput = [];
+      const membersWithoutInput = [];
+      
+      editSelectedMembers.forEach(id => {
+        const rawVal = editPercentages[id];
+        const val = parseFloat(rawVal);
+        if (rawVal !== undefined && rawVal !== '' && !isNaN(val)) {
+          membersWithInput.push({ id, val });
+        } else {
+          membersWithoutInput.push(id);
+        }
+      });
+      
+      membersWithInput.forEach(m => {
+        sumEntered += m.val;
+        finalAmounts[m.id] = (m.val / 100) * totalAmount;
+      });
+      
+      const remainingPercent = 100 - sumEntered;
+      if (membersWithoutInput.length > 0) {
+        const splitPercent = Math.max(0, remainingPercent) / membersWithoutInput.length;
+        membersWithoutInput.forEach(id => {
+          finalAmounts[id] = (splitPercent / 100) * totalAmount;
+        });
+      }
+      return finalAmounts;
+    }
+    
+    return finalAmounts;
+  };
+
+  const calculatedAmounts = getCalculatedAmounts();
+
   const handleSaveEdit = async () => {
     setLoading(true);
     try {
+      const totalAmount = parseFloat(editAmount) || 0;
+
+      if (editSplitType === 'custom') {
+        const sum = editSelectedMembers.reduce((acc, id) => {
+          const val = editCustomAmounts[id];
+          return acc + (val !== undefined && val !== '' && !isNaN(parseFloat(val)) ? parseFloat(val) : 0);
+        }, 0);
+        const emptyCount = editSelectedMembers.filter(id => {
+          const val = editCustomAmounts[id];
+          return val === undefined || val === '' || isNaN(parseFloat(val));
+        }).length;
+        if (emptyCount === 0 && Math.abs(sum - totalAmount) > 0.01) {
+          alert("The entered amounts don't sum up to the total.");
+          setLoading(false);
+          return;
+        }
+        if (sum > totalAmount) {
+          alert("The entered amounts exceed the total amount.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (editSplitType === 'percentage') {
+        const sum = editSelectedMembers.reduce((acc, id) => {
+          const val = editPercentages[id];
+          return acc + (val !== undefined && val !== '' && !isNaN(parseFloat(val)) ? parseFloat(val) : 0);
+        }, 0);
+        const emptyCount = editSelectedMembers.filter(id => {
+          const val = editPercentages[id];
+          return val === undefined || val === '' || isNaN(parseFloat(val));
+        }).length;
+        if (emptyCount === 0 && Math.abs(sum - 100) > 0.01) {
+          alert("The entered percentages don't sum up to 100%.");
+          setLoading(false);
+          return;
+        }
+        if (sum > 100) {
+          alert("The entered percentages exceed 100%.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const formData = new FormData();
       formData.append('title', editTitle);
       formData.append('amount', editAmount);
@@ -93,11 +214,22 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
       formData.append('selectedMembers', JSON.stringify(editSelectedMembers));
 
       if (editSplitType === 'custom') {
-        const customArr = editSelectedMembers.map(id => ({ user: id, amount: editCustomAmounts[id] || 0 }));
+        const customArr = editSelectedMembers.map(id => ({ 
+          user: id, 
+          amount: parseFloat((calculatedAmounts[id] || 0).toFixed(2)) 
+        }));
+        const totalSum = customArr.reduce((acc, curr) => acc + curr.amount, 0);
+        const diff = totalAmount - totalSum;
+        if (customArr.length > 0 && Math.abs(diff) > 0) {
+          customArr[0].amount = parseFloat((customArr[0].amount + diff).toFixed(2));
+        }
         formData.append('customAmounts', JSON.stringify(customArr));
       }
       if (editSplitType === 'percentage') {
-        const pctArr = editSelectedMembers.map(id => ({ user: id, percentage: editPercentages[id] || 0 }));
+        const pctArr = editSelectedMembers.map(id => ({ 
+          user: id, 
+          percentage: editPercentages[id] !== undefined && editPercentages[id] !== '' ? parseFloat(editPercentages[id]) : ((calculatedAmounts[id] / totalAmount) * 100)
+        }));
         formData.append('percentages', JSON.stringify(pctArr));
       }
 
@@ -381,8 +513,8 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
                                 type="number" 
                                 className="md-input" 
                                 style={{ width: '70px', padding: '6px', textAlign: 'right' }}
-                                placeholder="0"
-                                value={editPercentages[member.user._id] || ''}
+                                placeholder={calculatedAmounts[member.user._id] ? ((calculatedAmounts[member.user._id] / (parseFloat(editAmount) || 1)) * 100).toFixed(2) : "0"}
+                                value={editPercentages[member.user._id] !== undefined ? editPercentages[member.user._id] : ''}
                                 onChange={e => setEditPercentages(prev => ({...prev, [member.user._id]: e.target.value}))}
                               />
                               <span className="text-caption">%</span>
@@ -395,9 +527,9 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
                                 type="number" 
                                 className="md-input" 
                                 style={{ width: '90px', padding: '6px', textAlign: 'right' }}
-                                placeholder="0.00"
+                                placeholder={calculatedAmounts[member.user._id] ? calculatedAmounts[member.user._id].toFixed(2) : "0.00"}
                                 step="0.01"
-                                value={editCustomAmounts[member.user._id] || ''}
+                                value={editCustomAmounts[member.user._id] !== undefined ? editCustomAmounts[member.user._id] : ''}
                                 onChange={e => setEditCustomAmounts(prev => ({...prev, [member.user._id]: e.target.value}))}
                               />
                             </div>
