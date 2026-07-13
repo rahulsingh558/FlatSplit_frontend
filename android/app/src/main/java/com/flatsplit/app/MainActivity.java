@@ -46,17 +46,19 @@ public class MainActivity extends BridgeActivity {
             InputStream inputStream = getContentResolver().openInputStream(uri);
             if (inputStream == null) return;
             
-            ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-            int bufferSize = 4096;
-            byte[] buffer = new byte[bufferSize];
+            java.io.File cacheDir = getCacheDir();
+            java.io.File tempFile = new java.io.File(cacheDir, "shared_receipt_" + System.currentTimeMillis() + ".jpg");
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
+            
+            byte[] buffer = new byte[4096];
             int len;
             while ((len = inputStream.read(buffer)) != -1) {
-                byteBuffer.write(buffer, 0, len);
+                fos.write(buffer, 0, len);
             }
-            byte[] imageBytes = byteBuffer.toByteArray();
-            String base64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+            fos.close();
+            inputStream.close();
             
-            pendingSharedImage = "data:" + mimeType + ";base64," + base64;
+            pendingSharedImage = tempFile.getAbsolutePath();
             injectSharedImage();
         } catch (Exception e) {
             e.printStackTrace();
@@ -68,8 +70,8 @@ public class MainActivity extends BridgeActivity {
             // Using an interval to ensure the JS runs only after the Hosted Web App URL has fully loaded and sessionStorage is accessible
             final String js = "var shareInterval = setInterval(function() { " +
                               "  try { " +
-                              "    if (window.sessionStorage) { " +
-                              "      sessionStorage.setItem('pendingSharedReceipt', '" + pendingSharedImage + "'); " +
+                              "    if (window.sessionStorage && window.location.href.indexOf('flatsplit.meals4heal.in') !== -1) { " +
+                              "      sessionStorage.setItem('pendingSharedReceiptPath', '" + pendingSharedImage.replace("\\", "\\\\") + "'); " +
                               "      window.location.href = '/dashboard'; " +
                               "      clearInterval(shareInterval); " +
                               "    } " +

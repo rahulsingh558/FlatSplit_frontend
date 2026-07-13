@@ -117,7 +117,8 @@ function FlatFeedContent() {
     // Automatically open the Add Expense modal if a shared receipt is pending
     if (typeof window !== 'undefined') {
       const pendingReceipt = sessionStorage.getItem('pendingSharedReceipt');
-      if (pendingReceipt && !isExpenseModalOpen) {
+      const pendingReceiptPath = sessionStorage.getItem('pendingSharedReceiptPath');
+      if ((pendingReceipt || pendingReceiptPath) && !isExpenseModalOpen) {
         setIsExpenseModalOpen(true);
       }
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers, onSubmitSuccess, myUser }) {
   const [title, setTitle] = useState('');
@@ -19,6 +20,8 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
       
       // Check for pending shared receipt
       const pendingReceipt = sessionStorage.getItem('pendingSharedReceipt');
+      const pendingReceiptPath = sessionStorage.getItem('pendingSharedReceiptPath');
+      
       if (pendingReceipt) {
         fetch(pendingReceipt)
           .then(res => res.blob())
@@ -28,6 +31,17 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             sessionStorage.removeItem('pendingSharedReceipt');
           })
           .catch(err => console.error('Error parsing shared receipt', err));
+      } else if (pendingReceiptPath) {
+        // Use Capacitor to convert the local file path to a web URL
+        const webUrl = Capacitor.convertFileSrc(pendingReceiptPath);
+        fetch(webUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], 'shared_receipt.jpg', { type: blob.type || 'image/jpeg' });
+            setReceipt(file);
+            sessionStorage.removeItem('pendingSharedReceiptPath');
+          })
+          .catch(err => console.error('Error fetching native shared receipt', err));
       }
     }
   }, [isOpen]);
