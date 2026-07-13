@@ -16,6 +16,19 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
   useEffect(() => {
     if (isOpen) {
       setDate(new Date().toISOString().split('T')[0]);
+      
+      // Check for pending shared receipt
+      const pendingReceipt = sessionStorage.getItem('pendingSharedReceipt');
+      if (pendingReceipt) {
+        fetch(pendingReceipt)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], 'shared_receipt.jpg', { type: blob.type });
+            setReceipt(file);
+            sessionStorage.removeItem('pendingSharedReceipt');
+          })
+          .catch(err => console.error('Error parsing shared receipt', err));
+      }
     }
   }, [isOpen]);
 
@@ -412,7 +425,15 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
               accept="image/*"
               onChange={e => setReceipt(e.target.files[0])}
             />
-            {receipt && <span className="text-caption" style={{ color: 'var(--color-primary)', display: 'block', marginTop: '4px' }}>{receipt.name} selected</span>}
+            {receipt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '8px', backgroundColor: 'var(--color-primary-subtle)', borderRadius: 'var(--radius-sm)' }}>
+                <span className="material-symbols-rounded" style={{ color: 'var(--color-primary)', fontSize: '20px' }}>image</span>
+                <span className="text-caption" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{receipt.name} selected</span>
+                <button type="button" onClick={() => setReceipt(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', marginLeft: 'auto' }}>
+                  <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>

@@ -113,6 +113,16 @@ function FlatFeedContent() {
     };
   }, [id]);
 
+  useEffect(() => {
+    // Automatically open the Add Expense modal if a shared receipt is pending
+    if (typeof window !== 'undefined') {
+      const pendingReceipt = sessionStorage.getItem('pendingSharedReceipt');
+      if (pendingReceipt && !isExpenseModalOpen) {
+        setIsExpenseModalOpen(true);
+      }
+    }
+  }, [id, isExpenseModalOpen]);
+
   const handleTyping = (e) => {
     setInputText(e.target.value);
     if (!myUser) return;
