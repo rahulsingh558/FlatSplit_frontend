@@ -40,10 +40,6 @@ export default function BalancesModal({ isOpen, onClose, flatId, myUser, onSubmi
 
     try {
       const formData = new FormData();
-      // If I am paying, I send to activeDebt.to. If I am receiving, I received from activeDebt.from (but wait, recordSettlement always assumes req.user is the sender).
-      // Ah! Our backend recordSettlement always sets `from: req.user._id`.
-      // So if I am RECEIVING, I cannot easily record it using the existing API unless I change it.
-      // Wait, let's look at recordSettlement endpoint. It assumes `req.user` is the one paying.
       formData.append('toUserId', settleMode === 'pay' ? activeDebt.to._id : activeDebt.from._id);
       formData.append('amount', activeDebt.amount);
       formData.append('method', 'upi');
@@ -51,8 +47,6 @@ export default function BalancesModal({ isOpen, onClose, flatId, myUser, onSubmi
         formData.append('proof', proofFile);
       }
 
-      // If we are in 'receive' mode, we need a way to tell the backend that the OTHER person paid us.
-      // For now, let's add a 'isReceiverRecording' flag, and backend can handle it.
       if (settleMode === 'receive') {
         formData.append('isReceiverRecording', 'true');
       }
@@ -83,117 +77,113 @@ export default function BalancesModal({ isOpen, onClose, flatId, myUser, onSubmi
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1500,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div className="md-card flex flex-col w-full" style={{ maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
+    <div className="modal-overlay">
+      <div className="md-card modal-card flex flex-col w-full" style={{ maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto', padding: '24px', position: 'relative' }}>
         
         {/* Settlement Confirmation Dialog (Overlay within Modal) */}
         {activeDebt && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--md-surface)', zIndex: 10, padding: '24px', display: 'flex', flexDirection: 'column' }}>
-            <h3 className="text-h6 mb-4">{settleMode === 'pay' ? 'Settle Up' : 'Receive Payment'}</h3>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--color-surface)', zIndex: 10, padding: '24px', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-md)' }}>
+            <h3 className="text-h6" style={{ marginBottom: '20px' }}>{settleMode === 'pay' ? 'Settle Up' : 'Receive Payment'}</h3>
             
-            <div className="flex flex-col items-center flex-1 justify-center gap-4 text-center">
+            <div className="flex flex-col items-center flex-1 justify-center" style={{ gap: '16px', textAlign: 'center' }}>
               <p className="text-body1">
                 {settleMode === 'pay' ? (
-                  <>Pay <span style={{ fontWeight: 500 }}>{activeDebt.to.name}</span></>
+                  <>Pay <span style={{ fontWeight: 600 }}>{activeDebt.to.name}</span></>
                 ) : (
-                  <>Ask <span style={{ fontWeight: 500 }}>{activeDebt.from.name}</span> to scan and pay</>
+                  <>Ask <span style={{ fontWeight: 600 }}>{activeDebt.from.name}</span> to scan and pay</>
                 )}
               </p>
-              <h2 className="text-h3" style={{ color: 'var(--md-primary)', margin: 0 }}>₹{activeDebt.amount}</h2>
+              <h2 style={{ fontSize: '2rem', color: 'var(--color-primary)', margin: 0, fontWeight: 700 }}>₹{activeDebt.amount}</h2>
 
               {settleMode === 'pay' ? (
                 // PAY MODE: Show receiver's QR code
                 activeDebt.to.upiId ? (
                   <>
-                    <div className="p-4 bg-white rounded-xl shadow-sm" style={{ border: '1px solid var(--md-divider)' }}>
+                    <div style={{ padding: '16px', background: '#fff', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
                       <QRCodeSVG 
                         value={`upi://pay?pa=${activeDebt.to.upiId}&pn=${encodeURIComponent(activeDebt.to.name)}&am=${activeDebt.amount}&cu=INR&tn=FlatSplit%20Settlement`} 
                         size={180} 
                       />
                     </div>
-                    <p className="text-body2 text-gray-500">Scan QR with any UPI app, or tap below</p>
+                    <p className="text-body2">Scan QR with any UPI app, or tap below</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                       <a 
                         href={`tez://upi/pay?pa=${activeDebt.to.upiId}&pn=${encodeURIComponent(activeDebt.to.name)}&am=${activeDebt.amount}&cu=INR&tn=FlatSplit%20Settlement`}
-                        className="md-btn md-btn-outlined w-full flex justify-center items-center gap-2"
-                        style={{ borderColor: '#4285F4', color: '#4285F4', fontSize: '14px' }}
+                        className="md-btn md-btn-outlined w-full flex justify-center items-center"
+                        style={{ gap: '8px', borderColor: '#4285F4', color: '#4285F4', fontSize: '13px' }}
                       >
-                        <span style={{ fontSize: '18px' }}>💳</span>
+                        <span style={{ fontSize: '16px' }}>💳</span>
                         Pay via Google Pay
                       </a>
                       <a 
                         href={`phonepe://pay?pa=${activeDebt.to.upiId}&pn=${encodeURIComponent(activeDebt.to.name)}&am=${activeDebt.amount}&cu=INR&tn=FlatSplit%20Settlement`}
-                        className="md-btn md-btn-outlined w-full flex justify-center items-center gap-2"
-                        style={{ borderColor: '#5F259F', color: '#5F259F', fontSize: '14px' }}
+                        className="md-btn md-btn-outlined w-full flex justify-center items-center"
+                        style={{ gap: '8px', borderColor: '#5F259F', color: '#5F259F', fontSize: '13px' }}
                       >
-                        <span style={{ fontSize: '18px' }}>📱</span>
+                        <span style={{ fontSize: '16px' }}>📱</span>
                         Pay via PhonePe
                       </a>
                       <a 
                         href={`paytmmp://pay?pa=${activeDebt.to.upiId}&pn=${encodeURIComponent(activeDebt.to.name)}&am=${activeDebt.amount}&cu=INR&tn=FlatSplit%20Settlement`}
-                        className="md-btn md-btn-outlined w-full flex justify-center items-center gap-2"
-                        style={{ borderColor: '#00BAF2', color: '#00BAF2', fontSize: '14px' }}
+                        className="md-btn md-btn-outlined w-full flex justify-center items-center"
+                        style={{ gap: '8px', borderColor: '#00BAF2', color: '#00BAF2', fontSize: '13px' }}
                       >
-                        <span style={{ fontSize: '18px' }}>💰</span>
+                        <span style={{ fontSize: '16px' }}>💰</span>
                         Pay via Paytm
                       </a>
                       <a 
                         href={`upi://pay?pa=${activeDebt.to.upiId}&pn=${encodeURIComponent(activeDebt.to.name)}&am=${activeDebt.amount}&cu=INR&tn=FlatSplit%20Settlement`}
-                        className="md-btn md-btn-text w-full flex justify-center items-center gap-2"
-                        style={{ color: 'var(--md-text-secondary)', fontSize: '13px' }}
+                        className="md-btn md-btn-text w-full flex justify-center items-center"
+                        style={{ gap: '6px', color: 'var(--color-text-secondary)', fontSize: '12px' }}
                       >
-                        <span className="material-icons" style={{ fontSize: '16px' }}>account_balance_wallet</span>
+                        <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>account_balance_wallet</span>
                         Other UPI App
                       </a>
                     </div>
                   </>
                 ) : (
-                  <div className="p-4 rounded-lg mt-4" style={{ backgroundColor: 'rgba(176, 0, 32, 0.05)', color: 'var(--md-error)' }}>
-                    <p className="text-body2 font-medium mb-1">No UPI ID Found</p>
-                    <p className="text-body2 text-sm opacity-80">This user hasn't added their UPI ID to their profile yet. Please pay them offline.</p>
+                  <div style={{ padding: '16px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', marginTop: '16px' }}>
+                    <p className="text-body2 font-medium" style={{ marginBottom: '4px', color: 'var(--color-error)' }}>No UPI ID Found</p>
+                    <p className="text-body2" style={{ opacity: 0.8, color: 'var(--color-error)' }}>This user hasn't added their UPI ID to their profile yet. Please pay them offline.</p>
                   </div>
                 )
               ) : (
                 // RECEIVE MODE: Show my own QR code
                 myUser.upiId ? (
                   <>
-                    <div className="p-4 bg-white rounded-xl shadow-sm" style={{ border: '1px solid var(--md-divider)' }}>
+                    <div style={{ padding: '16px', background: '#fff', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
                       <QRCodeSVG 
                         value={`upi://pay?pa=${myUser.upiId}&pn=${encodeURIComponent(myUser.name)}&am=${activeDebt.amount}&cu=INR&tn=FlatSplit%20Settlement`} 
                         size={180} 
                       />
                     </div>
-                    <p className="text-body2 text-gray-500">Show this QR to {activeDebt.from.name}</p>
+                    <p className="text-body2">Show this QR to {activeDebt.from.name}</p>
                   </>
                 ) : (
-                  <div className="p-4 rounded-lg mt-4" style={{ backgroundColor: 'rgba(176, 0, 32, 0.05)', color: 'var(--md-error)' }}>
-                    <p className="text-body2 font-medium mb-1">Your UPI ID is missing</p>
-                    <p className="text-body2 text-sm opacity-80">Go to Settings and add your UPI ID so others can scan and pay you.</p>
+                  <div style={{ padding: '16px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', marginTop: '16px' }}>
+                    <p className="text-body2 font-medium" style={{ marginBottom: '4px', color: 'var(--color-error)' }}>Your UPI ID is missing</p>
+                    <p className="text-body2" style={{ opacity: 0.8, color: 'var(--color-error)' }}>Go to Settings and add your UPI ID so others can scan and pay you.</p>
                   </div>
                 )
               )}
             </div>
             
             {/* Proof Upload */}
-            <div className="mt-4 mb-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+              <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>
                 {settleMode === 'pay' ? 'Upload Payment Screenshot (Optional)' : 'Upload Receipt/Proof (Optional)'}
               </label>
               <input 
                 type="file" 
                 accept="image/*"
                 onChange={(e) => setProofFile(e.target.files[0])}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="md-input"
+                style={{ padding: '8px' }}
               />
             </div>
 
-            <div className="flex justify-between gap-2 mt-auto pt-4" style={{ borderTop: '1px solid var(--md-divider)' }}>
-              <button className="md-btn md-btn-text" onClick={() => { setActiveDebt(null); setSettleMode(null); setProofFile(null); }}>Cancel</button>
+            <div className="flex justify-between" style={{ gap: '8px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--color-divider)' }}>
+              <button className="md-btn md-btn-text" style={{ color: 'var(--color-text-secondary)' }} onClick={() => { setActiveDebt(null); setSettleMode(null); setProofFile(null); }}>Cancel</button>
               <button className="md-btn md-btn-contained" onClick={handleSettleUp} disabled={isSettling}>
                 {isSettling ? 'Recording...' : (settleMode === 'pay' ? "I've Paid" : "Mark as Received")}
               </button>
@@ -201,34 +191,34 @@ export default function BalancesModal({ isOpen, onClose, flatId, myUser, onSubmi
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center" style={{ marginBottom: '20px' }}>
           <h2 className="text-h6" style={{ margin: 0 }}>Balances</h2>
-          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--md-text-secondary)', padding: '4px', minWidth: 'auto' }}>
-            <span className="material-icons">close</span>
+          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--color-text-tertiary)', padding: '4px', minWidth: 'auto' }}>
+            <span className="material-symbols-rounded">close</span>
           </button>
         </div>
 
         {loading ? (
-          <p className="text-body2 text-center my-4">Calculating balances...</p>
+          <p className="text-body2" style={{ textAlign: 'center', margin: '16px 0' }}>Calculating balances...</p>
         ) : debts.length === 0 ? (
-          <div className="text-center my-8">
-            <span className="material-icons" style={{ fontSize: '48px', color: 'var(--md-text-disabled)', marginBottom: '16px' }}>check_circle</span>
+          <div style={{ textAlign: 'center', margin: '32px 0' }}>
+            <span className="material-symbols-rounded" style={{ fontSize: '48px', color: 'var(--color-success)', marginBottom: '12px', display: 'block' }}>check_circle</span>
             <p className="text-body1">All settled up!</p>
             <p className="text-body2 mt-1">No one owes anything in this flat.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col" style={{ gap: '10px' }}>
             {debts.map((debt, idx) => {
               const isMeOwing = myUser && debt.from._id === myUser._id;
               const isOwedToMe = myUser && debt.to._id === myUser._id;
 
               return (
-                <div key={idx} className="flex items-center justify-between p-3 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.02)', border: '1px solid var(--md-divider)' }}>
+                <div key={idx} className="flex items-center justify-between" style={{ padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-surface-hover)', border: '1px solid var(--color-border)' }}>
                   <div>
-                    <div className="text-subtitle2">
+                    <div className="text-subtitle2" style={{ color: 'var(--color-text)' }}>
                       {isMeOwing ? 'You' : debt.from.name.split(' ')[0]} owes {isOwedToMe ? 'You' : debt.to.name.split(' ')[0]}
                     </div>
-                    <div className="text-h6" style={{ color: isMeOwing ? 'var(--md-error)' : isOwedToMe ? 'var(--md-secondary-variant)' : 'var(--md-text-primary)' }}>
+                    <div className="text-h6" style={{ color: isMeOwing ? 'var(--color-error)' : isOwedToMe ? 'var(--color-success)' : 'var(--color-text)' }}>
                       ₹{debt.amount}
                     </div>
                   </div>
@@ -236,7 +226,7 @@ export default function BalancesModal({ isOpen, onClose, flatId, myUser, onSubmi
                   {isMeOwing && (
                     <button 
                       className="md-btn md-btn-outlined" 
-                      style={{ padding: '4px 12px', borderColor: 'var(--md-primary)' }}
+                      style={{ padding: '4px 12px' }}
                       onClick={() => { setActiveDebt(debt); setSettleMode('pay'); }}
                     >
                       Pay
@@ -245,7 +235,7 @@ export default function BalancesModal({ isOpen, onClose, flatId, myUser, onSubmi
                   {isOwedToMe && (
                     <button 
                       className="md-btn md-btn-outlined" 
-                      style={{ padding: '4px 12px', borderColor: 'var(--md-secondary-variant)', color: 'var(--md-secondary-variant)' }}
+                      style={{ padding: '4px 12px', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
                       onClick={() => { setActiveDebt(debt); setSettleMode('receive'); }}
                     >
                       Receive

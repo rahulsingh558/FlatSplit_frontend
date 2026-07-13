@@ -56,28 +56,23 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1500,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div className="md-card flex flex-col w-full" style={{ maxWidth: '400px', padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+    <div className="modal-overlay">
+      <div className="md-card modal-card flex flex-col w-full" style={{ maxWidth: '400px', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 className="text-h6" style={{ margin: 0 }}>Group Settings</h2>
-          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--md-text-secondary)', padding: '4px', minWidth: 'auto' }}>
-            <span className="material-icons">close</span>
+          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--color-text-tertiary)', padding: '4px', minWidth: 'auto' }}>
+            <span className="material-symbols-rounded">close</span>
           </button>
         </div>
 
         {!isDeleting ? (
           <>
-            <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label className="text-caption">Group Name</label>
+                <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Group Name</label>
                 <input 
                   type="text" 
-                  className="md-input mt-1" 
+                  className="md-input" 
                   value={name}
                   onChange={e => setName(e.target.value)}
                   disabled={!isAdmin && !isCreator}
@@ -85,12 +80,12 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {isCreator && (
                   <button 
                     type="button" 
                     className="md-btn md-btn-outlined" 
-                    style={{ borderColor: 'var(--md-error)', color: 'var(--md-error)' }}
+                    style={{ borderColor: 'var(--color-error-light)', color: 'var(--color-error)', padding: '6px 12px' }}
                     onClick={() => setIsDeleting(true)}
                   >
                     Delete Group
@@ -98,7 +93,7 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
                 )}
                 
                 {(isAdmin || isCreator) ? (
-                  <button type="submit" className="md-btn md-btn-contained" disabled={loading || name === flat?.name}>
+                  <button type="submit" className="md-btn md-btn-contained" disabled={loading || name === flat?.name} style={{ marginLeft: 'auto' }}>
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
                 ) : (
@@ -109,7 +104,7 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
           </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ padding: '12px', backgroundColor: 'rgba(176, 0, 32, 0.1)', color: 'var(--md-error)', borderRadius: '4px' }}>
+            <div style={{ padding: '16px', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', borderRadius: 'var(--radius-sm)' }}>
               <strong>Warning:</strong> Deleting this group will permanently remove all associated expenses, settlements, and messages. This action cannot be undone.
             </div>
             <p className="text-body2">Are you absolutely sure you want to delete <strong>{flat?.name}</strong>?</p>
@@ -119,7 +114,7 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
                 type="button" 
                 onClick={() => setIsDeleting(false)} 
                 className="md-btn md-btn-text" 
-                style={{ color: 'var(--md-text-secondary)' }}
+                style={{ color: 'var(--color-text-secondary)' }}
                 disabled={loading}
               >
                 Cancel
@@ -128,7 +123,7 @@ export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, is
                 type="button" 
                 onClick={handleDelete} 
                 className="md-btn md-btn-contained" 
-                style={{ backgroundColor: 'var(--md-error)' }}
+                style={{ backgroundColor: 'var(--color-error)' }}
                 disabled={loading}
               >
                 {loading ? 'Deleting...' : 'Yes, Delete Group'}

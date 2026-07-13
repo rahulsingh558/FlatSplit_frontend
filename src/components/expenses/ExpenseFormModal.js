@@ -6,11 +6,18 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('other');
-  const [splitType, setSplitType] = useState('equal');
+  const [splitMethod, setSplitMethod] = useState('equal');
+  const [splitValues, setSplitValues] = useState({});
   const [receipt, setReceipt] = useState(null);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [isOpen]);
 
   const categories = [
     { value: 'groceries', label: '🥬 Groceries' },
@@ -23,10 +30,11 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
     { value: 'other', label: '📝 Other' },
   ];
 
-  // Initialize all members as selected when modal opens
   useEffect(() => {
     if (isOpen && flatMembers && flatMembers.length > 0) {
       setSelectedMembers(flatMembers.map(m => m.user._id));
+      setSplitMethod('equal');
+      setSplitValues({});
     }
   }, [isOpen, flatMembers]);
 
@@ -35,9 +43,14 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
   const toggleMember = (memberId) => {
     setSelectedMembers(prev => {
       if (prev.includes(memberId)) {
-        // Don't allow deselecting all — at least 1 must remain
         if (prev.length <= 1) return prev;
-        return prev.filter(id => id !== memberId);
+        const next = prev.filter(id => id !== memberId);
+        setSplitValues(sv => {
+          const newSv = { ...sv };
+          delete newSv[memberId];
+          return newSv;
+        });
+        return next;
       } else {
         return [...prev, memberId];
       }
@@ -48,23 +61,138 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
     setSelectedMembers(flatMembers.map(m => m.user._id));
   };
 
-  const perPersonAmount = selectedMembers.length > 0 && amount
-    ? (parseFloat(amount) / selectedMembers.length).toFixed(2)
-    : '0.00';
+  const getCalculatedAmounts = () => {
+    const totalAmount = parseFloat(amount) || 0;
+    const finalAmounts = {};
+    const selectedCount = selectedMembers.length;
+    
+    if (selectedCount === 0 || totalAmount <= 0) return {};
+
+    if (splitMethod === 'equal') {
+      const splitAmount = totalAmount / selectedCount;
+      selectedMembers.forEach(id => finalAmounts[id] = splitAmount);
+      return finalAmounts;
+    }
+
+    const membersWithInput = [];
+    const membersWithoutInput = [];
+    
+    selectedMembers.forEach(id => {
+      const val = parseFloat(splitValues[id]);
+      if (!isNaN(val) && val >= 0) {
+        membersWithInput.push({ id, val });
+      } else {
+        membersWithoutInput.push(id);
+      }
+    });
+
+    if (splitMethod === 'amount') {
+      let sumEntered = 0;
+      membersWithInput.forEach(m => {
+        sumEntered += m.val;
+        finalAmounts[m.id] = m.val;
+      });
+      
+      const remainder = totalAmount - sumEntered;
+      if (membersWithoutInput.length > 0) {
+        const splitRemainder = Math.max(0, remainder) / membersWithoutInput.length;
+        membersWithoutInput.forEach(id => finalAmounts[id] = splitRemainder);
+      }
+      return finalAmounts;
+    }
+
+    if (splitMethod === 'share') {
+      let totalShares = 0;
+      const memberShares = {};
+      
+      selectedMembers.forEach(id => {
+        const val = parseFloat(splitValues[id]);
+        const share = (!isNaN(val) && val > 0) ? val : 1;
+        memberShares[id] = share;
+        totalShares += share;
+      });
+      
+      selectedMembers.forEach(id => {
+        finalAmounts[id] = (memberShares[id] / totalShares) * totalAmount;
+      });
+      return finalAmounts;
+    }
+
+    if (splitMethod === 'percentage') {
+      let sumEntered = 0;
+      membersWithInput.forEach(m => {
+        sumEntered += m.val;
+        finalAmounts[m.id] = (m.val / 100) * totalAmount;
+      });
+      
+      const remainingPercent = 100 - sumEntered;
+      if (membersWithoutInput.length > 0) {
+        const splitPercent = Math.max(0, remainingPercent) / membersWithoutInput.length;
+        membersWithoutInput.forEach(id => {
+          finalAmounts[id] = (splitPercent / 100) * totalAmount;
+        });
+      }
+      return finalAmounts;
+    }
+    
+    return finalAmounts;
+  };
+
+  const calculatedAmounts = getCalculatedAmounts();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !amount || selectedMembers.length === 0) return;
 
+    const totalAmount = parseFloat(amount) || 0;
+    
+    if (splitMethod === 'amount') {
+      const sum = selectedMembers.reduce((acc, id) => acc + (parseFloat(splitValues[id]) || 0), 0);
+      const emptyCount = selectedMembers.filter(id => isNaN(parseFloat(splitValues[id]))).length;
+      if (emptyCount === 0 && Math.abs(sum - totalAmount) > 0.01) {
+        alert("The entered amounts don't sum up to the total.");
+        return;
+      }
+      if (sum > totalAmount) {
+        alert("The entered amounts exceed the total amount.");
+        return;
+      }
+    }
+
+    if (splitMethod === 'percentage') {
+      const sum = selectedMembers.reduce((acc, id) => acc + (parseFloat(splitValues[id]) || 0), 0);
+      const emptyCount = selectedMembers.filter(id => isNaN(parseFloat(splitValues[id]))).length;
+      if (emptyCount === 0 && Math.abs(sum - 100) > 0.01) {
+        alert("The entered percentages don't sum up to 100%.");
+        return;
+      }
+      if (sum > 100) {
+        alert("The entered percentages exceed 100%.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
+      const customAmountsArray = selectedMembers.map(id => ({
+        user: id,
+        amount: parseFloat((calculatedAmounts[id] || 0).toFixed(2))
+      }));
+      
+      const totalSum = customAmountsArray.reduce((acc, curr) => acc + curr.amount, 0);
+      const diff = totalAmount - totalSum;
+      if (customAmountsArray.length > 0 && Math.abs(diff) > 0) {
+        customAmountsArray[0].amount = parseFloat((customAmountsArray[0].amount + diff).toFixed(2));
+      }
+
       const formData = new FormData();
       formData.append('flatId', flatId);
       formData.append('title', title);
       formData.append('amount', amount);
       formData.append('category', category);
-      formData.append('splitType', splitType);
+      formData.append('splitType', 'custom'); 
+      formData.append('customAmounts', JSON.stringify(customAmountsArray));
       formData.append('selectedMembers', JSON.stringify(selectedMembers));
       formData.append('date', date);
       
@@ -85,7 +213,8 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
         setAmount('');
         setReceipt(null);
         setCategory('other');
-        setSplitType('equal');
+        setSplitMethod('equal');
+        setSplitValues({});
         onClose();
         if (onSubmitSuccess) {
           onSubmitSuccess(data.data);
@@ -103,25 +232,18 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1500,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div className="md-card flex flex-col w-full" style={{ maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
-        {/* Header */}
+    <div className="modal-overlay">
+      <div className="md-card modal-card flex flex-col w-full" style={{ maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 className="text-h6" style={{ margin: 0 }}>Add Expense</h2>
-          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--md-text-secondary)', padding: '4px', minWidth: 'auto' }}>
-            <span className="material-icons">close</span>
+          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--color-text-tertiary)', padding: '4px', minWidth: 'auto' }}>
+            <span className="material-symbols-rounded">close</span>
           </button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Title */}
           <div>
-            <label className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '4px', display: 'block' }}>Title</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Title</label>
             <input 
               type="text" 
               className="md-input" 
@@ -132,9 +254,8 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             />
           </div>
 
-          {/* Amount */}
           <div>
-            <label className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '4px', display: 'block' }}>Amount (₹)</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Amount (₹)</label>
             <input 
               type="number" 
               className="md-input" 
@@ -146,9 +267,8 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             />
           </div>
 
-          {/* Category */}
           <div>
-            <label className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '4px', display: 'block' }}>Category</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Category</label>
             <select 
               className="md-input" 
               value={category}
@@ -160,9 +280,8 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             </select>
           </div>
 
-          {/* Date */}
           <div>
-            <label className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '4px', display: 'block' }}>Date</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Date</label>
             <input 
               type="date" 
               className="md-input" 
@@ -172,24 +291,43 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             />
           </div>
 
-          {/* Split Among — GPay-style member list */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label className="text-caption" style={{ color: 'var(--md-text-secondary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <label className="text-caption">
                 Split among ({selectedMembers.length} of {flatMembers?.length || 0})
               </label>
               {selectedMembers.length < (flatMembers?.length || 0) && (
                 <button type="button" onClick={selectAll} style={{ 
-                  background: 'none', border: 'none', color: 'var(--md-primary)', 
-                  cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px'
+                  background: 'none', border: 'none', color: 'var(--color-primary)', 
+                  cursor: 'pointer', fontSize: '0.6875rem', fontWeight: 600, padding: '4px 8px'
                 }}>
                   Select All
                 </button>
               )}
             </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {[
+                { id: 'equal', label: '= Evenly' },
+                { id: 'amount', label: '₹ Amounts' },
+                { id: 'share', label: '◴ Shares' },
+                { id: 'percentage', label: '% Percent' }
+              ].map(method => (
+                <button 
+                  key={method.id}
+                  type="button"
+                  onClick={() => { setSplitMethod(method.id); setSplitValues({}); }}
+                  className={`md-btn ${splitMethod === method.id ? 'md-btn-contained' : 'md-btn-outlined'}`}
+                  style={{ borderRadius: 'var(--radius-full)', padding: '6px 12px', fontSize: '0.75rem', flexShrink: 0 }}
+                >
+                  {method.label}
+                </button>
+              ))}
+            </div>
+
             <div style={{ 
-              border: '1px solid var(--md-divider)', borderRadius: '12px', 
-              overflow: 'hidden', backgroundColor: 'var(--md-surface)' 
+              border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', 
+              overflow: 'hidden', backgroundColor: 'var(--color-surface)' 
             }}>
               {flatMembers && flatMembers.map((member, index) => {
                 const isSelected = selectedMembers.includes(member.user._id);
@@ -197,53 +335,67 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
                 return (
                   <div 
                     key={member.user._id}
-                    onClick={() => toggleMember(member.user._id)}
                     style={{
-                      display: 'flex', alignItems: 'center', padding: '12px 16px',
-                      cursor: 'pointer', userSelect: 'none',
-                      borderBottom: index < flatMembers.length - 1 ? '1px solid var(--md-divider)' : 'none',
-                      backgroundColor: isSelected ? 'rgba(98, 0, 238, 0.04)' : 'transparent',
-                      transition: 'background-color 0.15s ease'
+                      display: 'flex', alignItems: 'center', padding: '10px 14px',
+                      borderBottom: index < flatMembers.length - 1 ? '1px solid var(--color-divider)' : 'none',
+                      backgroundColor: isSelected ? 'var(--color-primary-subtle)' : 'transparent',
+                      transition: 'background-color var(--transition-fast)'
                     }}
                   >
-                    {/* Checkbox */}
-                    <div style={{
-                      width: '22px', height: '22px', borderRadius: '4px',
-                      border: isSelected ? 'none' : '2px solid var(--md-text-disabled)',
-                      backgroundColor: isSelected ? 'var(--md-primary)' : 'transparent',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      marginRight: '14px', flexShrink: 0,
-                      transition: 'all 0.15s ease'
-                    }}>
+                    <div 
+                      onClick={() => toggleMember(member.user._id)}
+                      style={{
+                        width: '20px', height: '20px', borderRadius: '4px',
+                        border: isSelected ? 'none' : '2px solid var(--color-text-tertiary)',
+                        backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginRight: '12px', flexShrink: 0, cursor: 'pointer',
+                        transition: 'all var(--transition-fast)'
+                      }}>
                       {isSelected && (
-                        <span className="material-icons" style={{ fontSize: '16px', color: 'var(--md-on-primary)' }}>check</span>
+                        <span className="material-symbols-rounded" style={{ fontSize: '14px', color: '#fff' }}>check</span>
                       )}
                     </div>
-                    {/* Avatar */}
+                    
                     <div style={{
-                      width: '36px', height: '36px', borderRadius: '50%',
-                      backgroundColor: isSelected ? 'var(--md-primary)' : 'var(--md-text-disabled)',
+                      width: '32px', height: '32px', borderRadius: 'var(--radius-sm)',
+                      backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
                       color: 'white',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 600, fontSize: '0.85rem', marginRight: '12px', flexShrink: 0,
-                      transition: 'background-color 0.15s ease'
+                      fontWeight: 600, fontSize: '0.75rem', marginRight: '10px', flexShrink: 0,
+                      transition: 'background-color var(--transition-fast)'
                     }}>
                       {member.user.name.charAt(0).toUpperCase()}
                     </div>
-                    {/* Name */}
+                    
                     <div style={{ flex: 1, overflow: 'hidden' }}>
                       <div className="text-body2" style={{ 
                         fontWeight: isSelected ? 500 : 400,
-                        color: isSelected ? 'var(--md-text-primary)' : 'var(--md-text-secondary)',
+                        color: isSelected ? 'var(--color-text)' : 'var(--color-text-secondary)',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                       }}>
                         {member.user.name}{isMe ? ' (You)' : ''}
                       </div>
                     </div>
-                    {/* Per-person amount */}
-                    {isSelected && amount && (
-                      <div className="text-body2" style={{ color: 'var(--md-primary)', fontWeight: 600, flexShrink: 0, marginLeft: '8px' }}>
-                        ₹{perPersonAmount}
+
+                    {isSelected && splitMethod !== 'equal' && (
+                      <div style={{ flexShrink: 0, width: '70px', marginLeft: '8px' }}>
+                        <input 
+                          type="number"
+                          className="md-input"
+                          style={{ padding: '6px 8px', fontSize: '0.75rem', textAlign: 'right', borderColor: 'var(--color-border)' }}
+                          placeholder={splitMethod === 'share' ? '1' : '0'}
+                          value={splitValues[member.user._id] || ''}
+                          onChange={(e) => setSplitValues(prev => ({ ...prev, [member.user._id]: e.target.value }))}
+                          step="any"
+                          min="0"
+                        />
+                      </div>
+                    )}
+                    
+                    {isSelected && (
+                      <div className="text-body2" style={{ color: 'var(--color-primary)', fontWeight: 600, flexShrink: 0, marginLeft: '12px', width: '60px', textAlign: 'right' }}>
+                        ₹{calculatedAmounts[member.user._id] ? calculatedAmounts[member.user._id].toFixed(2) : '0.00'}
                       </div>
                     )}
                   </div>
@@ -252,36 +404,19 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             </div>
           </div>
 
-          {/* Split Summary */}
-          {amount && selectedMembers.length > 0 && (
-            <div style={{ 
-              padding: '12px 16px', backgroundColor: 'rgba(98, 0, 238, 0.06)', 
-              borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              <span className="text-body2" style={{ color: 'var(--md-text-secondary)' }}>
-                Split equally among {selectedMembers.length} {selectedMembers.length === 1 ? 'person' : 'people'}
-              </span>
-              <span className="text-subtitle1" style={{ color: 'var(--md-primary)', fontWeight: 600 }}>
-                ₹{perPersonAmount}/person
-              </span>
-            </div>
-          )}
-
-          {/* Receipt */}
           <div>
-            <label className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '4px', display: 'block' }}>Receipt Photo (Optional)</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Receipt Photo (Optional)</label>
             <input 
               type="file" 
               className="md-input" 
               accept="image/*"
               onChange={e => setReceipt(e.target.files[0])}
             />
-            {receipt && <span className="text-caption" style={{ color: 'var(--md-primary)', display: 'block', marginTop: '4px' }}>{receipt.name} selected</span>}
+            {receipt && <span className="text-caption" style={{ color: 'var(--color-primary)', display: 'block', marginTop: '4px' }}>{receipt.name} selected</span>}
           </div>
 
-          {/* Actions */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
-            <button type="button" onClick={onClose} className="md-btn md-btn-text" style={{ color: 'var(--md-text-secondary)' }}>
+            <button type="button" onClick={onClose} className="md-btn md-btn-text" style={{ color: 'var(--color-text-secondary)' }}>
               Cancel
             </button>
             <button 

@@ -63,26 +63,21 @@ export default function PersonalExpenseFormModal({ isOpen, onClose, flatId, targ
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1500,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div className="md-card flex flex-col w-full" style={{ maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
-        <div className="flex justify-between items-center mb-4">
+    <div className="modal-overlay" style={{ zIndex: 1600 }}>
+      <div className="md-card modal-card flex flex-col w-full" style={{ maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 className="text-h6" style={{ margin: 0 }}>Split with {targetUser?.name?.split(' ')[0]}</h2>
-          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--md-text-secondary)', padding: '4px', minWidth: 'auto' }}>
-            <span className="material-icons">close</span>
+          <button onClick={onClose} className="md-btn-text" style={{ color: 'var(--color-text-tertiary)', padding: '4px', minWidth: 'auto' }}>
+            <span className="material-symbols-rounded">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label className="text-caption">What was this for?</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>What was this for?</label>
             <input 
               type="text" 
-              className="md-input mt-1" 
+              className="md-input" 
               placeholder="e.g. Dinner, Uber, etc." 
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -91,10 +86,10 @@ export default function PersonalExpenseFormModal({ isOpen, onClose, flatId, targ
           </div>
 
           <div>
-            <label className="text-caption">Total Amount (₹)</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Total Amount (₹)</label>
             <input 
               type="number" 
-              className="md-input mt-1" 
+              className="md-input" 
               placeholder="0.00" 
               value={amount}
               onChange={e => setAmount(e.target.value)}
@@ -104,9 +99,9 @@ export default function PersonalExpenseFormModal({ isOpen, onClose, flatId, targ
           </div>
 
           <div>
-            <label className="text-caption">Category</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Category</label>
             <select 
-              className="md-input mt-1" 
+              className="md-input" 
               value={category}
               onChange={e => setCategory(e.target.value)}
             >
@@ -117,10 +112,10 @@ export default function PersonalExpenseFormModal({ isOpen, onClose, flatId, targ
           </div>
 
           <div>
-            <label className="text-caption">Date</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Date</label>
             <input 
               type="date" 
-              className="md-input mt-1" 
+              className="md-input" 
               value={date}
               onChange={e => setDate(e.target.value)}
               required
@@ -128,9 +123,9 @@ export default function PersonalExpenseFormModal({ isOpen, onClose, flatId, targ
           </div>
 
           <div>
-            <label className="text-caption">Split</label>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Split</label>
             <select 
-              className="md-input mt-1" 
+              className="md-input" 
               value={splitType}
               onChange={e => setSplitType(e.target.value)}
             >
@@ -139,16 +134,21 @@ export default function PersonalExpenseFormModal({ isOpen, onClose, flatId, targ
             </select>
           </div>
 
-          <div style={{ padding: '12px', backgroundColor: 'var(--md-surface)', borderRadius: '8px', marginTop: '8px', border: '1px solid var(--md-divider)' }}>
-            <div className="text-body2 text-center">
+          <div style={{ 
+            padding: '12px', backgroundColor: 'var(--color-primary-subtle)', 
+            borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-light)' 
+          }}>
+            <div className="text-body2 text-center" style={{ color: 'var(--color-text)' }}>
               You paid <strong>₹{amount || '0'}</strong>.
               <br/>
-              {targetUser?.name?.split(' ')[0]} will owe you <strong>₹{splitType === 'full' ? (amount || 0) : ((amount || 0) / 2).toFixed(2)}</strong>.
+              <span style={{ color: 'var(--color-primary)' }}>
+                {targetUser?.name?.split(' ')[0]} will owe you <strong>₹{splitType === 'full' ? (amount || 0) : ((amount || 0) / 2).toFixed(2)}</strong>.
+              </span>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <button type="button" onClick={onClose} className="md-btn md-btn-text" style={{ color: 'var(--md-text-secondary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+            <button type="button" onClick={onClose} className="md-btn md-btn-text" style={{ color: 'var(--color-text-secondary)' }}>
               Cancel
             </button>
             <button type="submit" className="md-btn md-btn-contained" disabled={loading}>

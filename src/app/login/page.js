@@ -12,29 +12,31 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--md-background)' }}>
-      <div className="md-card flex flex-col items-center text-center p-8 w-full" style={{ maxWidth: '400px', margin: '16px' }}>
+    <div className="flex flex-col items-center justify-center" style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg)' }}>
+      <div className="md-card flex flex-col items-center p-2 w-full" style={{ maxWidth: '380px', margin: '16px', padding: '40px 32px', textAlign: 'center' }}>
         <div style={{
-          width: '64px', height: '64px', borderRadius: '16px',
-          backgroundColor: 'rgba(98, 0, 238, 0.1)', color: 'var(--md-primary)',
+          width: '56px', height: '56px', borderRadius: 'var(--radius-md)',
+          backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '16px'
+          marginBottom: '20px'
         }}>
-          <span className="material-icons" style={{ fontSize: '32px' }}>receipt_long</span>
+          <span className="material-symbols-rounded" style={{ fontSize: '28px' }}>receipt_long</span>
         </div>
         
-        <h1 className="text-h5 mb-2">FlatSplit</h1>
-        <p className="text-body2 mb-8" style={{ color: 'var(--md-text-secondary)' }}>
+        <h1 className="text-h5" style={{ marginBottom: '8px' }}>
+          <span style={{ color: 'var(--color-primary)' }}>Flat</span>Split
+        </h1>
+        <p className="text-body2" style={{ marginBottom: '32px', maxWidth: '260px' }}>
           Manage your flat expenses and settle up effortlessly.
         </p>
         
         <button 
           onClick={handleGoogleLogin} 
           disabled={loading}
-          className="md-btn md-btn-outlined w-full flex items-center justify-center gap-3"
-          style={{ height: '48px', fontSize: '1rem' }}
+          className="md-btn md-btn-outlined w-full flex items-center justify-center gap-2"
+          style={{ height: '46px', fontSize: '0.875rem', fontWeight: 500, borderRadius: 'var(--radius-sm)' }}
         >
-          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" width="24" height="24" />
+          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" width="20" height="20" />
           {loading ? 'Redirecting...' : 'Continue with Google'}
         </button>
       </div>

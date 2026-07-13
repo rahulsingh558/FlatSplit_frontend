@@ -88,7 +88,7 @@ export default function Analytics() {
       {
         data: Object.values(categoryMap),
         backgroundColor: [
-          '#6200EE', '#03DAC6', '#B00020', '#FF9800', '#4CAF50', '#9C27B0'
+          '#3B82F6', '#8B5CF6', '#EC4899', '#F97316', '#10B981', '#06B6D4'
         ],
         borderWidth: 0,
       },
@@ -112,8 +112,8 @@ export default function Analytics() {
       {
         label: 'Monthly Spend (₹)',
         data: Object.values(monthMap),
-        backgroundColor: '#6200EE',
-        borderRadius: 4,
+        backgroundColor: '#3B82F6',
+        borderRadius: 6,
       },
     ],
   };
@@ -125,50 +125,65 @@ export default function Analytics() {
       legend: {
         position: 'bottom',
         labels: {
-          color: 'var(--md-text-primary)'
+          color: 'var(--color-text-secondary)',
+          font: { family: 'Inter', size: 12 },
+          padding: 16,
+          usePointStyle: true,
+          pointStyleWidth: 10,
         }
       }
     }
   };
 
-  if (loading) return <div className="p-4 text-center">Loading analytics...</div>;
+  if (loading) return <div className="p-2" style={{ textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading analytics...</div>;
 
   return (
-    <div className="flex-col gap-4 pb-20">
-      <div className="flex justify-between items-center mb-4">
+    <div className="flex-col" style={{ paddingBottom: '80px' }}>
+      <div className="flex justify-between items-center" style={{ marginBottom: '24px' }}>
         <h1 className="text-h5" style={{ margin: 0 }}>Analytics</h1>
       </div>
 
       {/* Summary Card */}
-      <div className="md-card p-4 text-center mb-4" style={{ background: 'linear-gradient(135deg, var(--md-primary) 0%, var(--md-primary-variant) 100%)', color: 'var(--md-on-primary)' }}>
-        <div className="text-body2 mb-1" style={{ color: 'rgba(255,255,255,0.8)' }}>Total Expenses</div>
-        <div className="text-h4 font-bold">₹{totalSpend.toLocaleString()}</div>
+      <div className="md-card" style={{ 
+        padding: '28px', textAlign: 'center', marginBottom: '20px', 
+        background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', 
+        color: '#fff', border: 'none' 
+      }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.8, marginBottom: '6px' }}>Total Expenses</div>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em' }}>₹{totalSpend.toLocaleString()}</div>
       </div>
 
       {expenses.length === 0 ? (
-        <div className="md-card p-6 text-center text-body1" style={{ color: 'var(--md-text-secondary)' }}>
-          No expenses recorded yet.
+        <div className="md-card" style={{ padding: '40px', textAlign: 'center' }}>
+          <span className="material-symbols-rounded" style={{ fontSize: '48px', color: 'var(--color-text-tertiary)', marginBottom: '12px', display: 'block' }}>insert_chart</span>
+          <p className="text-body1" style={{ color: 'var(--color-text-secondary)' }}>No expenses recorded yet.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col" style={{ gap: '16px' }}>
           
-          <div className="md-card p-4">
-            <h2 className="text-subtitle1 mb-4">Spend by Category</h2>
+          <div className="md-card" style={{ padding: '20px' }}>
+            <h2 className="text-subtitle1" style={{ marginBottom: '16px', fontWeight: 600 }}>Spend by Category</h2>
             <div style={{ height: '250px' }}>
               <Pie data={categoryData} options={chartOptions} />
             </div>
           </div>
 
-          <div className="md-card p-4">
-            <h2 className="text-subtitle1 mb-4">Spend over Time</h2>
+          <div className="md-card" style={{ padding: '20px' }}>
+            <h2 className="text-subtitle1" style={{ marginBottom: '16px', fontWeight: 600 }}>Spend over Time</h2>
             <div style={{ height: '250px' }}>
               <Bar 
                 data={barData} 
                 options={{
                   ...chartOptions,
                   scales: {
-                    x: { ticks: { color: 'var(--md-text-secondary)' }, grid: { display: false } },
-                    y: { ticks: { color: 'var(--md-text-secondary)' }, grid: { color: 'var(--md-divider)' } }
+                    x: { 
+                      ticks: { color: 'var(--color-text-tertiary)', font: { family: 'Inter', size: 11 } }, 
+                      grid: { display: false } 
+                    },
+                    y: { 
+                      ticks: { color: 'var(--color-text-tertiary)', font: { family: 'Inter', size: 11 } }, 
+                      grid: { color: 'var(--color-divider)' } 
+                    }
                   }
                 }} 
               />

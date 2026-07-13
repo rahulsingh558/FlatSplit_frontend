@@ -219,16 +219,16 @@ export default function DirectMessageFeed() {
   const totalSharedCount = sharedExpenses.groupExpenses.length + sharedExpenses.personalExpenses.length;
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1200, backgroundColor: 'var(--md-background)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1200, backgroundColor: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
       
       {/* Top App Bar */}
-      <header className="md-app-bar" style={{ backgroundColor: 'var(--md-surface)', color: 'var(--md-text-primary)' }}>
-        <button onClick={() => router.push(`/feed/flat/${flatId}`)} className="md-btn-text flex items-center justify-center" style={{ color: 'var(--md-text-primary)', minWidth: '48px', padding: 0, marginRight: '16px' }}>
-          <span className="material-icons">arrow_back</span>
+      <header className="md-app-bar" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
+        <button onClick={() => router.push(`/feed/flat/${flatId}`)} className="md-btn-text flex items-center justify-center" style={{ color: 'var(--color-text)', minWidth: '48px', padding: 0, marginRight: '16px' }}>
+          <span className="material-symbols-rounded">arrow_back</span>
         </button>
         <div style={{
           width: '40px', height: '40px', borderRadius: '50%', 
-          backgroundColor: 'var(--md-primary)', color: 'var(--md-on-primary)',
+          backgroundColor: 'var(--color-primary)', color: 'var(--color-text-inverse)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '1.25rem', fontWeight: 500, marginRight: '16px', flexShrink: 0
         }}>
@@ -238,7 +238,7 @@ export default function DirectMessageFeed() {
           <div className="text-h6" style={{ lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {targetUser ? targetUser.name : 'Loading...'}
           </div>
-          <div className="text-caption" style={{ color: 'var(--md-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="text-caption" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {flat ? flat.name : ''}
           </div>
         </div>
@@ -247,17 +247,17 @@ export default function DirectMessageFeed() {
           onClick={() => setShowExpenses(!showExpenses)} 
           className="md-btn-text" 
           style={{ 
-            color: showExpenses ? 'var(--md-primary)' : 'var(--md-text-primary)', 
+            color: showExpenses ? 'var(--color-primary)' : 'var(--color-text)', 
             padding: '8px', minWidth: '40px',
             position: 'relative'
           }}
         >
-          <span className="material-icons">receipt_long</span>
+          <span className="material-symbols-rounded">receipt_long</span>
           {totalSharedCount > 0 && (
             <span style={{
               position: 'absolute', top: '4px', right: '4px',
               width: '18px', height: '18px', borderRadius: '50%',
-              backgroundColor: 'var(--md-error)', color: 'white',
+              backgroundColor: 'var(--color-error)', color: 'white',
               fontSize: '0.65rem', fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
@@ -270,8 +270,8 @@ export default function DirectMessageFeed() {
       {/* Shared Expenses Panel */}
       {showExpenses && (
         <div style={{
-          backgroundColor: 'var(--md-surface)',
-          borderBottom: '1px solid var(--md-divider)',
+          backgroundColor: 'var(--color-surface)',
+          borderBottom: '1px solid var(--color-divider)',
           maxHeight: '60vh',
           overflowY: 'auto',
           animation: 'slideDown 0.25s ease'
@@ -283,17 +283,17 @@ export default function DirectMessageFeed() {
               <div style={{
                 padding: '16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                borderBottom: '1px solid var(--md-divider)',
+                borderBottom: '1px solid var(--color-divider)',
                 background: netBalance >= 0 
                   ? 'linear-gradient(135deg, rgba(3, 218, 198, 0.08), rgba(3, 218, 198, 0.02))'
                   : 'linear-gradient(135deg, rgba(207, 102, 121, 0.08), rgba(207, 102, 121, 0.02))'
               }}>
                 <div>
-                  <div className="text-caption" style={{ color: 'var(--md-text-secondary)', marginBottom: '2px' }}>
+                  <div className="text-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: '2px' }}>
                     Net Balance
                   </div>
                   <div className="text-subtitle1" style={{ 
-                    color: netBalance >= 0 ? 'var(--md-secondary-variant)' : 'var(--md-error)',
+                    color: netBalance >= 0 ? 'var(--color-success)' : 'var(--color-error)',
                     fontWeight: 600
                   }}>
                     {netBalance >= 0 
@@ -302,8 +302,8 @@ export default function DirectMessageFeed() {
                     }
                   </div>
                 </div>
-                <span className="material-icons" style={{ 
-                  color: netBalance >= 0 ? 'var(--md-secondary-variant)' : 'var(--md-error)',
+                <span className="material-symbols-rounded" style={{ 
+                  color: netBalance >= 0 ? 'var(--color-success)' : 'var(--color-error)',
                   fontSize: '28px'
                 }}>
                   {netBalance >= 0 ? 'trending_up' : 'trending_down'}
@@ -314,12 +314,12 @@ export default function DirectMessageFeed() {
 
           {expensesLoading ? (
             <div style={{ padding: '24px', textAlign: 'center' }}>
-              <span className="text-body2" style={{ color: 'var(--md-text-secondary)' }}>Loading expenses...</span>
+              <span className="text-body2" style={{ color: 'var(--color-text-secondary)' }}>Loading expenses...</span>
             </div>
           ) : totalSharedCount === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center' }}>
-              <span className="material-icons" style={{ fontSize: '40px', color: 'var(--md-text-disabled)', marginBottom: '8px', display: 'block' }}>receipt_long</span>
-              <span className="text-body2" style={{ color: 'var(--md-text-secondary)' }}>No shared expenses yet</span>
+              <span className="material-symbols-rounded" style={{ fontSize: '40px', color: 'var(--color-text-tertiary)', marginBottom: '8px', display: 'block' }}>receipt_long</span>
+              <span className="text-body2" style={{ color: 'var(--color-text-secondary)' }}>No shared expenses yet</span>
             </div>
           ) : (
             <div style={{ padding: '12px' }}>
@@ -328,7 +328,7 @@ export default function DirectMessageFeed() {
                 <div style={{ marginBottom: '12px' }}>
                   <div className="text-overline" style={{ 
                     fontSize: '0.65rem', fontWeight: 600, letterSpacing: '1.5px', 
-                    textTransform: 'uppercase', color: 'var(--md-text-secondary)', 
+                    textTransform: 'uppercase', color: 'var(--color-text-secondary)', 
                     marginBottom: '8px', padding: '0 4px'
                   }}>
                     Group Expenses ({sharedExpenses.groupExpenses.length})
@@ -347,15 +347,15 @@ export default function DirectMessageFeed() {
                         <div key={exp._id} style={{
                           display: 'flex', alignItems: 'center', gap: '12px',
                           padding: '10px 12px', borderRadius: '10px',
-                          backgroundColor: 'var(--md-background)',
-                          border: '1px solid var(--md-divider)'
+                          backgroundColor: 'var(--color-bg)',
+                          border: '1px solid var(--color-divider)'
                         }}>
                           <div style={{
                             width: '36px', height: '36px', borderRadius: '50%',
-                            backgroundColor: 'rgba(98, 0, 238, 0.1)', color: 'var(--md-primary)',
+                            backgroundColor: 'rgba(98, 0, 238, 0.1)', color: 'var(--color-primary)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                           }}>
-                            <span className="material-icons" style={{ fontSize: '18px' }}>group</span>
+                            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>group</span>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="text-body2" style={{ 
@@ -363,19 +363,19 @@ export default function DirectMessageFeed() {
                             }}>
                               {exp.title}
                             </div>
-                            <div className="text-caption" style={{ color: 'var(--md-text-secondary)' }}>
+                            <div className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
                               Paid by {isPaidByMe ? 'you' : exp.paidBy?.name?.split(' ')[0]} · {new Date(exp.date).toLocaleDateString()}
                             </div>
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
                             <div style={{ 
                               fontSize: '0.85rem', fontWeight: 600,
-                              color: exp.status === 'closed' ? 'var(--md-text-disabled)' : 'var(--md-primary)',
+                              color: exp.status === 'closed' ? 'var(--color-text-tertiary)' : 'var(--color-primary)',
                               textDecoration: exp.status === 'closed' ? 'line-through' : 'none'
                             }}>
                               ₹{exp.amount}
                             </div>
-                            <div className="text-caption" style={{ color: 'var(--md-text-secondary)', fontSize: '0.65rem' }}>
+                            <div className="text-caption" style={{ color: 'var(--color-text-secondary)', fontSize: '0.65rem' }}>
                               Your share: ₹{myShare?.amount?.toFixed(2) || '0'}
                             </div>
                           </div>
@@ -391,7 +391,7 @@ export default function DirectMessageFeed() {
                 <div>
                   <div className="text-overline" style={{ 
                     fontSize: '0.65rem', fontWeight: 600, letterSpacing: '1.5px', 
-                    textTransform: 'uppercase', color: 'var(--md-text-secondary)', 
+                    textTransform: 'uppercase', color: 'var(--color-text-secondary)', 
                     marginBottom: '8px', padding: '0 4px'
                   }}>
                     Personal Expenses ({sharedExpenses.personalExpenses.length})
@@ -404,16 +404,16 @@ export default function DirectMessageFeed() {
                         <div key={exp._id} style={{
                           display: 'flex', alignItems: 'center', gap: '12px',
                           padding: '10px 12px', borderRadius: '10px',
-                          backgroundColor: 'var(--md-background)',
-                          border: '1px solid var(--md-divider)'
+                          backgroundColor: 'var(--color-bg)',
+                          border: '1px solid var(--color-divider)'
                         }}>
                           <div style={{
                             width: '36px', height: '36px', borderRadius: '50%',
                             backgroundColor: isPaidByMe ? 'rgba(3, 218, 198, 0.1)' : 'rgba(207, 102, 121, 0.1)',
-                            color: isPaidByMe ? 'var(--md-secondary-variant)' : 'var(--md-error)',
+                            color: isPaidByMe ? 'var(--color-success)' : 'var(--color-error)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                           }}>
-                            <span className="material-icons" style={{ fontSize: '18px' }}>
+                            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                               {isPaidByMe ? 'call_made' : 'call_received'}
                             </span>
                           </div>
@@ -423,14 +423,14 @@ export default function DirectMessageFeed() {
                             }}>
                               {exp.title}
                             </div>
-                            <div className="text-caption" style={{ color: 'var(--md-text-secondary)' }}>
+                            <div className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
                               {isPaidByMe ? `You paid` : `${exp.paidBy?.name?.split(' ')[0]} paid`} · {new Date(exp.date).toLocaleDateString()}
                             </div>
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
                             <div style={{ 
                               fontSize: '0.85rem', fontWeight: 600,
-                              color: isPaidByMe ? 'var(--md-secondary-variant)' : 'var(--md-error)'
+                              color: isPaidByMe ? 'var(--color-success)' : 'var(--color-error)'
                             }}>
                               {isPaidByMe ? '+' : '-'}₹{exp.owedAmount}
                             </div>
@@ -463,7 +463,7 @@ export default function DirectMessageFeed() {
               {!isMe && (
                 <div style={{ 
                   width: '32px', height: '32px', borderRadius: '50%', 
-                  backgroundColor: 'var(--md-primary)', color: 'white', 
+                  backgroundColor: 'var(--color-primary)', color: 'white', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', 
                   marginRight: '8px', flexShrink: 0, alignSelf: 'flex-end',
                   fontSize: '0.85rem', fontWeight: 600
@@ -494,8 +494,8 @@ export default function DirectMessageFeed() {
                     borderRadius: '16px',
                     borderTopRightRadius: isMe ? '4px' : '16px',
                     borderTopLeftRadius: !isMe ? '4px' : '16px',
-                    backgroundColor: isMe ? 'var(--md-primary)' : 'var(--md-surface)',
-                    color: isMe ? 'var(--md-on-primary)' : 'var(--md-text-primary)',
+                    backgroundColor: isMe ? 'var(--color-primary)' : 'var(--color-surface)',
+                    color: isMe ? 'var(--color-text-inverse)' : 'var(--color-text)',
                     boxShadow: 'var(--elevation-1)'
                   }}>
                     <span className="text-body1">{msg.content}</span>
@@ -514,7 +514,7 @@ export default function DirectMessageFeed() {
                           <div style={{
                             width: '40px', height: '40px', borderRadius: '50%',
                             overflow: 'hidden', flexShrink: 0,
-                            border: '1px solid var(--md-divider)'
+                            border: '1px solid var(--color-divider)'
                           }}>
                             <img 
                               src={resolvedUrl} 
@@ -526,24 +526,24 @@ export default function DirectMessageFeed() {
                       })() : (
                         <div style={{
                           width: '40px', height: '40px', borderRadius: '50%',
-                          backgroundColor: 'rgba(98, 0, 238, 0.1)', color: 'var(--md-primary)',
+                          backgroundColor: 'rgba(98, 0, 238, 0.1)', color: 'var(--color-primary)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                         }}>
-                          <span className="material-icons" style={{ fontSize: '20px' }}>receipt_long</span>
+                          <span className="material-symbols-rounded" style={{ fontSize: '20px' }}>receipt_long</span>
                         </div>
                       )}
                       <div style={{ flex: 1 }}>
                         <div className="text-subtitle1" style={{ fontSize: '0.95rem' }}>{msg.relatedExpense?.title || 'Expense'}</div>
-                        <div className="text-body2" style={{ fontSize: '0.8rem', color: 'var(--md-text-secondary)' }}>
+                        <div className="text-body2" style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
                           Paid by {isMe ? 'you' : msg.sender?.name?.split(' ')[0]}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div className="text-h6" style={{ color: 'var(--md-primary)', fontSize: '1.1rem' }}>₹{msg.relatedExpense?.amount || 0}</div>
+                        <div className="text-h6" style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>₹{msg.relatedExpense?.amount || 0}</div>
                       </div>
                     </div>
-                    <div style={{ backgroundColor: 'rgba(0,0,0,0.03)', padding: '10px 16px', display: 'flex', justifyContent: 'center', borderTop: '1px solid var(--md-divider)' }}>
-                      <span className="text-body2" style={{ fontSize: '0.8rem', color: 'var(--md-text-secondary)' }}>
+                    <div style={{ backgroundColor: 'rgba(0,0,0,0.03)', padding: '10px 16px', display: 'flex', justifyContent: 'center', borderTop: '1px solid var(--color-divider)' }}>
+                      <span className="text-body2" style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
                         {isMe 
                           ? `They owe you ₹${msg.relatedExpense?.owedAmount || (msg.relatedExpense?.amount / 2)}` 
                           : `You owe ₹${msg.relatedExpense?.owedAmount || (msg.relatedExpense?.amount / 2)}`
@@ -562,7 +562,7 @@ export default function DirectMessageFeed() {
               {isMe && (
                 <div style={{ 
                   width: '32px', height: '32px', borderRadius: '50%', 
-                  backgroundColor: 'var(--md-primary)', color: 'white', 
+                  backgroundColor: 'var(--color-primary)', color: 'white', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', 
                   marginLeft: '8px', flexShrink: 0, alignSelf: 'flex-end',
                   fontSize: '0.85rem', fontWeight: 600
@@ -586,7 +586,7 @@ export default function DirectMessageFeed() {
       {/* Input Area */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        backgroundColor: 'var(--md-surface)',
+        backgroundColor: 'var(--color-surface)',
         padding: '8px 16px',
         boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
         display: 'flex', alignItems: 'center', gap: '12px',
@@ -599,7 +599,7 @@ export default function DirectMessageFeed() {
           title="Add Split"
           onClick={() => setIsExpenseModalOpen(true)}
         >
-          <span className="material-icons">add</span>
+          <span className="material-symbols-rounded">add</span>
         </button>
         
         <form onSubmit={handleSendMessage} style={{ flex: '1 1 0%', display: 'flex', alignItems: 'center' }}>
@@ -609,10 +609,10 @@ export default function DirectMessageFeed() {
             onChange={handleTyping}
             placeholder="Message..."
             className="md-input"
-            style={{ borderRadius: '24px', padding: '12px 20px', border: 'none', backgroundColor: 'var(--md-background)' }}
+            style={{ borderRadius: '24px', padding: '12px 20px', border: 'none', backgroundColor: 'var(--color-bg)' }}
           />
           <button type="submit" disabled={!inputText.trim()} className="md-btn-text" style={{ minWidth: '48px', padding: 0, marginLeft: '4px' }}>
-            <span className="material-icons" style={{ color: inputText.trim() ? 'var(--md-primary)' : 'var(--md-text-disabled)' }}>send</span>
+            <span className="material-symbols-rounded" style={{ color: inputText.trim() ? 'var(--color-primary)' : 'var(--color-text-tertiary)' }}>send</span>
           </button>
         </form>
       </div>

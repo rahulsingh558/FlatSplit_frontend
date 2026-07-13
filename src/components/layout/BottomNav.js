@@ -7,8 +7,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { name: 'Chats', href: '/dashboard', icon: 'chat' },
-    { name: 'Analytics', href: '/analytics', icon: 'bar_chart' },
+    { name: 'Chats', href: '/dashboard', icon: 'chat_bubble' },
+    { name: 'Analytics', href: '/analytics', icon: 'insert_chart' },
     { name: 'Reports', href: '/reports', icon: 'description' },
     { name: 'Profile', href: '/settings', icon: 'person' },
   ];
@@ -20,7 +20,7 @@ export default function BottomNav() {
         
         return (
           <Link key={item.name} href={item.href} className={`md-bottom-nav-item ${isActive ? 'active' : ''}`}>
-            <span className="material-icons md-bottom-nav-icon">{item.icon}</span>
+            <span className="material-symbols-rounded md-bottom-nav-icon">{item.icon}</span>
             <span className="md-bottom-nav-label">{item.name}</span>
           </Link>
         );

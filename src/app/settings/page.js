@@ -101,64 +101,65 @@ export default function Settings() {
     }
   };
 
-  if (loading) return <div className="p-4 text-center">Loading profile...</div>;
-  if (!user) return <div className="p-4 text-center text-error">Failed to load profile.</div>;
+  if (loading) return <div className="p-2" style={{ textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading profile...</div>;
+  if (!user) return <div className="p-2" style={{ textAlign: 'center', color: 'var(--color-error)' }}>Failed to load profile.</div>;
 
   return (
-    <div className="flex-col gap-4 pb-20">
-      <div className="flex justify-between items-center mb-4">
+    <div className="flex-col" style={{ paddingBottom: '80px' }}>
+      <div className="flex justify-between items-center" style={{ marginBottom: '24px' }}>
         <h1 className="text-h5" style={{ margin: 0 }}>Profile & Settings</h1>
         {!isEditing ? (
-          <button className="md-btn-text" style={{ color: 'var(--md-primary)' }} onClick={() => setIsEditing(true)}>
-            <span className="material-icons mr-1" style={{ fontSize: '18px' }}>edit</span> Edit
+          <button className="md-btn md-btn-text" onClick={() => setIsEditing(true)}>
+            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>edit</span>
+            Edit
           </button>
         ) : (
-          <button className="md-btn-text" style={{ color: 'var(--md-text-secondary)' }} onClick={() => setIsEditing(false)}>
+          <button className="md-btn md-btn-text" style={{ color: 'var(--color-text-secondary)' }} onClick={() => setIsEditing(false)}>
             Cancel
           </button>
         )}
       </div>
 
-      <div className="md-card p-4">
-        <div className="flex flex-col items-center gap-3 mb-6">
+      <div className="md-card" style={{ padding: '24px' }}>
+        <div className="flex flex-col items-center" style={{ gap: '16px', marginBottom: '24px' }}>
           <img 
             src={user.avatar || 'https://via.placeholder.com/100'} 
             alt="Profile Avatar" 
-            style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px solid var(--md-primary)', objectFit: 'cover' }} 
+            style={{ width: '72px', height: '72px', borderRadius: 'var(--radius-lg)', border: '2px solid var(--color-border)', objectFit: 'cover' }} 
           />
-          <div className="text-center">
+          <div style={{ textAlign: 'center' }}>
             <div className="text-h6" style={{ lineHeight: 1.2 }}>{user.name}</div>
-            <div className="text-body2" style={{ color: 'var(--md-text-secondary)' }}>{user.email}</div>
+            <div className="text-body2">{user.email}</div>
           </div>
         </div>
 
         {isEditing ? (
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
+          <form onSubmit={handleSave} className="flex flex-col" style={{ gap: '16px' }}>
             <div>
-              <label className="text-caption">Full Name</label>
+              <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Full Name</label>
               <input 
                 type="text" 
-                className="md-input mt-1" 
+                className="md-input" 
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="text-caption">Phone Number</label>
+              <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Phone Number</label>
               <input 
                 type="tel" 
-                className="md-input mt-1" 
+                className="md-input" 
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="+91"
               />
             </div>
             <div>
-              <label className="text-caption">UPI ID (For fast settlements)</label>
+              <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>UPI ID (For fast settlements)</label>
               <input 
                 type="text" 
-                className="md-input mt-1" 
+                className="md-input" 
                 value={upiId}
                 onChange={e => setUpiId(e.target.value)}
                 placeholder="e.g. rahul@okaxis"
@@ -170,15 +171,15 @@ export default function Settings() {
             </button>
           </form>
         ) : (
-          <div className="flex flex-col gap-4">
-            <div style={{ borderBottom: '1px solid var(--md-divider)', paddingBottom: '12px' }}>
-              <div className="text-caption mb-1">Phone Number</div>
-              <div className="text-body1">{user.phone || <span style={{ fontStyle: 'italic', color: 'var(--md-text-disabled)' }}>Not set</span>}</div>
+          <div className="flex flex-col" style={{ gap: '16px' }}>
+            <div style={{ borderBottom: '1px solid var(--color-divider)', paddingBottom: '12px' }}>
+              <div className="text-caption" style={{ marginBottom: '4px' }}>Phone Number</div>
+              <div className="text-body1">{user.phone || <span style={{ fontStyle: 'italic', color: 'var(--color-text-tertiary)' }}>Not set</span>}</div>
             </div>
             
-            <div style={{ borderBottom: '1px solid var(--md-divider)', paddingBottom: '12px' }}>
-              <div className="text-caption mb-1">UPI ID</div>
-              <div className="text-body1 font-medium" style={{ color: user.upiId ? 'var(--md-secondary-variant)' : 'var(--md-text-disabled)' }}>
+            <div style={{ borderBottom: '1px solid var(--color-divider)', paddingBottom: '12px' }}>
+              <div className="text-caption" style={{ marginBottom: '4px' }}>UPI ID</div>
+              <div className="text-body1 font-medium" style={{ color: user.upiId ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}>
                 {user.upiId || <span style={{ fontStyle: 'italic' }}>Not set</span>}
               </div>
             </div>
@@ -186,40 +187,71 @@ export default function Settings() {
         )}
       </div>
 
-      <h2 className="text-overline mt-6 mb-2" style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--md-text-secondary)' }}>
+      <div className="text-caption" style={{ 
+        fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', 
+        color: 'var(--color-text-tertiary)', marginTop: '28px', marginBottom: '12px' 
+      }}>
         Preferences
-      </h2>
+      </div>
       
-      <div className="md-card p-0 overflow-hidden mb-6">
-        <label className="interactive flex items-center justify-between p-4 cursor-pointer" style={{ borderBottom: '1px solid var(--md-divider)' }}>
-          <div className="flex items-center gap-3">
-            <span className="material-icons" style={{ color: 'var(--md-text-secondary)' }}>notifications</span>
+      <div className="md-card" style={{ padding: 0, overflow: 'hidden', marginBottom: '24px' }}>
+        <label style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+          padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)',
+          transition: 'background-color var(--transition-fast)'
+        }}>
+          <div className="flex items-center" style={{ gap: '12px' }}>
+            <span className="material-symbols-rounded" style={{ color: 'var(--color-text-secondary)', fontSize: '22px' }}>notifications</span>
             <span className="text-body1">Push Notifications</span>
           </div>
-          <div className="relative inline-block w-10 h-6">
-            <input type="checkbox" className="peer sr-only" defaultChecked />
-            <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-[var(--md-primary)] transition-colors"></div>
-            <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4 shadow-sm"></div>
+          <div style={{ position: 'relative', width: '44px', height: '24px' }}>
+            <input type="checkbox" defaultChecked style={{ 
+              width: '44px', height: '24px', appearance: 'none', borderRadius: '12px',
+              backgroundColor: 'var(--color-border)', cursor: 'pointer', transition: 'background-color var(--transition-fast)',
+              position: 'relative'
+            }} 
+            onChange={() => {}} 
+            />
           </div>
         </label>
         
-        <label className="interactive flex items-center justify-between p-4 cursor-pointer" style={{ borderBottom: '1px solid var(--md-divider)' }}>
-          <div className="flex items-center gap-3">
-            <span className="material-icons" style={{ color: 'var(--md-text-secondary)' }}>dark_mode</span>
+        <label style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+          padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)',
+          transition: 'background-color var(--transition-fast)'
+        }}>
+          <div className="flex items-center" style={{ gap: '12px' }}>
+            <span className="material-symbols-rounded" style={{ color: 'var(--color-text-secondary)', fontSize: '22px' }}>dark_mode</span>
             <span className="text-body1">Dark Theme</span>
           </div>
-          <div className="relative inline-block w-10 h-6">
-            <input type="checkbox" className="peer sr-only" checked={isDarkMode} onChange={toggleDarkMode} />
-            <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-[var(--md-primary)] transition-colors"></div>
-            <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4 shadow-sm"></div>
+          <div 
+            onClick={toggleDarkMode}
+            style={{ 
+              position: 'relative', width: '44px', height: '24px', borderRadius: '12px',
+              backgroundColor: isDarkMode ? 'var(--color-primary)' : 'var(--color-border)', 
+              cursor: 'pointer', transition: 'background-color var(--transition-fast)',
+              flexShrink: 0
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: '2px', 
+              left: isDarkMode ? '22px' : '2px',
+              width: '20px', height: '20px', borderRadius: '50%',
+              backgroundColor: '#fff', boxShadow: 'var(--shadow-xs)',
+              transition: 'left var(--transition-fast)'
+            }} />
           </div>
         </label>
         
-        <div className="interactive flex items-center p-4 cursor-pointer" onClick={handleLogout}>
-          <div className="flex items-center gap-3 w-full">
-            <span className="material-icons" style={{ color: 'var(--md-error)' }}>logout</span>
-            <span className="text-body1 font-medium" style={{ color: 'var(--md-error)' }}>Logout</span>
-          </div>
+        <div 
+          onClick={handleLogout}
+          style={{ 
+            display: 'flex', alignItems: 'center', padding: '14px 16px', cursor: 'pointer', gap: '12px',
+            transition: 'background-color var(--transition-fast)'
+          }}
+        >
+          <span className="material-symbols-rounded" style={{ color: 'var(--color-error)', fontSize: '22px' }}>logout</span>
+          <span className="text-body1 font-medium" style={{ color: 'var(--color-error)' }}>Logout</span>
         </div>
       </div>
 
