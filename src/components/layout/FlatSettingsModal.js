@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function FlatSettingsModal({ isOpen, onClose, flat, isCreator, isAdmin, onFlatUpdated, onFlatDeleted }) {
   const [name, setName] = useState(flat?.name || '');
   const [settlementType, setSettlementType] = useState(flat?.settlementType || 'overall');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && flat) {
+      setName(flat.name || '');
+      setSettlementType(flat.settlementType || 'overall');
+      setIsDeleting(false);
+    }
+  }, [isOpen, flat]);
 
   if (!isOpen) return null;
 
