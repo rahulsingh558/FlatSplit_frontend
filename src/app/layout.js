@@ -5,20 +5,28 @@ import CapacitorAppListener from "@/components/layout/CapacitorAppListener";
 export const metadata = {
   title: "FlatSplit",
   description: "Flat expense management app",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "FlatSplit",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: '/icons/icon-192x192.png',
+  },
 };
 
 export const viewport = {
   themeColor: "#2563EB",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{
           __html: `
