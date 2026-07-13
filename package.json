@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:mobile": "cross-env CAPACITOR_BUILD=1 next build",
+    "build": "next build --webpack",
+    "build:mobile": "cross-env CAPACITOR_BUILD=1 next build --webpack",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/ios": "^8.4.1",

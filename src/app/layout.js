@@ -1,5 +1,6 @@
 import "./globals.css";
 import AppLayout from "@/components/layout/AppLayout";
+import CapacitorAppListener from "@/components/layout/CapacitorAppListener";
 
 export const metadata = {
   title: "FlatSplit",
@@ -42,6 +43,7 @@ export default function RootLayout({ children }) {
         }} />
       </head>
       <body>
+        <CapacitorAppListener />
         <AppLayout>{children}</AppLayout>
       </body>
     </html>

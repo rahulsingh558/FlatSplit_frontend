@@ -1,14 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
-    // Redirect to backend Google OAuth route
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/google`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url: `${apiUrl}/api/auth/google?platform=android` });
+        // Loading state remains true until the app intercepts the deep link
+      } else {
+        window.location.href = `${apiUrl}/api/auth/google`;
+      }
+    } catch (e) {
+      setLoading(false);
+      alert('Failed to open login browser');
+    }
   };
 
   return (
