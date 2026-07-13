@@ -53,7 +53,13 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
   if (!isOpen || !expense) return null;
 
   const isCreator = myUser && (expense.createdBy === myUser._id || expense.createdBy?._id === myUser._id);
+  const isAdmin = flatMembers?.find(m => m.user._id === myUser?._id)?.role === 'admin';
   const isClosed = expense.status === 'closed';
+
+  const isPending = expense.deleteRequest?.status === 'pending';
+  const requestedById = expense.deleteRequest?.requestedBy?._id || expense.deleteRequest?.requestedBy;
+  const iAmRequester = requestedById === myUser?._id;
+  const iNeedToAuthorize = isPending && !iAmRequester && (isCreator || isAdmin);
 
   const categories = [
     { value: 'groceries', label: '🥬 Groceries' },
@@ -114,6 +120,57 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
     } catch (err) {
       console.error(err);
       alert('Failed to update expense');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRequest = async () => {
+    if (!confirm('Are you sure you want to delete this expense?')) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/${expense._id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.message === 'Expense deleted') {
+          onClose();
+        } else {
+          if (onExpenseUpdated) onExpenseUpdated(data.data);
+        }
+      } else {
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to request deletion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthorizeDelete = async (action) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/${expense._id}/delete-response`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (action === 'approve') {
+          onClose();
+        }
+      } else {
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to authorize deletion');
     } finally {
       setLoading(false);
     }
@@ -384,29 +441,67 @@ export default function SplitBreakdownModal({ isOpen, onClose, expense, flatMemb
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', gap: '8px', flexWrap: 'wrap' }}>
-          {isCreator && !isEditing && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                onClick={() => setIsEditing(true)} 
-                className="md-btn md-btn-outlined" 
-                style={{ color: 'var(--color-primary)', borderColor: 'var(--color-primary-light)' }}
-                disabled={loading}
-              >
-                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>edit</span>
-                Edit
-              </button>
-              <button 
-                onClick={handleToggleStatus}
-                className="md-btn md-btn-outlined" 
-                style={{ 
-                  color: isClosed ? 'var(--color-text-secondary)' : 'var(--color-error)',
-                  borderColor: isClosed ? 'var(--color-border)' : 'var(--color-error-light)'
-                }}
-                disabled={loading}
-              >
-                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>{isClosed ? 'lock_open' : 'check_circle'}</span>
-                {loading ? '...' : (isClosed ? 'Reopen' : 'Close')}
-              </button>
+          {iNeedToAuthorize && !isEditing && (
+             <div style={{ padding: '12px', backgroundColor: 'var(--color-error-light)', borderRadius: 'var(--radius-sm)', width: '100%', marginBottom: '12px' }}>
+               <div className="text-body2" style={{ color: 'var(--color-error)', fontWeight: 600, marginBottom: '8px' }}>
+                 {expense.deleteRequest?.requestedBy?.name || 'A user'} wants to delete this expense.
+               </div>
+               <div style={{ display: 'flex', gap: '8px' }}>
+                 <button onClick={() => handleAuthorizeDelete('approve')} className="md-btn md-btn-contained" style={{ backgroundColor: 'var(--color-error)', flex: 1 }} disabled={loading}>
+                   Approve Delete
+                 </button>
+                 <button onClick={() => handleAuthorizeDelete('reject')} className="md-btn md-btn-outlined" style={{ flex: 1 }} disabled={loading}>
+                   Reject
+                 </button>
+               </div>
+             </div>
+          )}
+
+          {isPending && iAmRequester && !isEditing && (
+            <div className="text-caption" style={{ color: 'var(--color-text-tertiary)', fontStyle: 'italic', width: '100%', textAlign: 'center', marginBottom: '8px' }}>
+              Deletion pending authorization...
+            </div>
+          )}
+
+          {!isEditing && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {isCreator && (
+                <>
+                  <button 
+                    onClick={() => setIsEditing(true)} 
+                    className="md-btn md-btn-outlined" 
+                    style={{ color: 'var(--color-primary)', borderColor: 'var(--color-primary-light)' }}
+                    disabled={loading || isPending}
+                  >
+                    <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>edit</span>
+                    Edit
+                  </button>
+                  <button 
+                    onClick={handleToggleStatus}
+                    className="md-btn md-btn-outlined" 
+                    style={{ 
+                      color: isClosed ? 'var(--color-text-secondary)' : 'var(--color-error)',
+                      borderColor: isClosed ? 'var(--color-border)' : 'var(--color-error-light)'
+                    }}
+                    disabled={loading || isPending}
+                  >
+                    <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>{isClosed ? 'lock_open' : 'check_circle'}</span>
+                    {loading ? '...' : (isClosed ? 'Reopen' : 'Close')}
+                  </button>
+                </>
+              )}
+              
+              {(isCreator || isAdmin) && !isPending && (
+                <button 
+                  onClick={handleDeleteRequest} 
+                  className="md-btn md-btn-outlined" 
+                  style={{ color: 'var(--color-error)', borderColor: 'var(--color-error-light)' }}
+                  disabled={loading}
+                >
+                  <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>delete</span>
+                  Delete
+                </button>
+              )}
             </div>
           )}
           {isEditing && (

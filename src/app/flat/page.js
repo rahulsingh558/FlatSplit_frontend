@@ -31,6 +31,8 @@ function FlatFeedContent() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [deleteRequestPopup, setDeleteRequestPopup] = useState(null);
+  const [deleteRequestLoading, setDeleteRequestLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const router = useRouter();
@@ -108,10 +110,59 @@ function FlatFeedContent() {
       });
     });
 
+    socket.on('expenseUpdated', (updatedExpense) => {
+      setMessages(prev => prev.map(m => {
+        if (m.relatedExpense && m.relatedExpense._id === updatedExpense._id) {
+          return { ...m, relatedExpense: updatedExpense };
+        }
+        return m;
+      }));
+      setSelectedExpenseForBreakdown(prev => {
+        if (prev && prev._id === updatedExpense._id) return updatedExpense;
+        return prev;
+      });
+    });
+
+    socket.on('expenseDeleted', (expenseId) => {
+      setMessages(prev => prev.filter(m => !(m.relatedExpense && m.relatedExpense._id === expenseId)));
+      setSelectedExpenseForBreakdown(prev => {
+        if (prev && prev._id === expenseId) return null;
+        return prev;
+      });
+      setDeleteRequestPopup(prev => {
+        if (prev?.expense?._id === expenseId) return null;
+        return prev;
+      });
+    });
+
     return () => {
       socket.disconnect();
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!socket || !myUser) return;
+    
+    const handleRequest = (data) => {
+      if (data.needsAuthFrom === myUser._id) {
+        setDeleteRequestPopup(data);
+      }
+    };
+    
+    const handleRejected = (data) => {
+      if (data.requestedBy === myUser._id) {
+        alert(`Your request to delete an expense was rejected by ${data.rejectedBy}.`);
+      }
+    };
+
+    socket.on('deleteExpenseRequest', handleRequest);
+    socket.on('deleteExpenseRejected', handleRejected);
+
+    return () => {
+      socket.off('deleteExpenseRequest', handleRequest);
+      socket.off('deleteExpenseRejected', handleRejected);
+    };
+  }, [myUser]);
 
   useEffect(() => {
     // Automatically open the Add Expense modal if a shared receipt is pending
@@ -135,6 +186,30 @@ function FlatFeedContent() {
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('stop-typing', { userId: myUser._id, flatId: id });
     }, 2000);
+  };
+
+  const handleAuthorizeDeletePopup = async (action) => {
+    if (!deleteRequestPopup) return;
+    setDeleteRequestLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/${deleteRequestPopup.expense._id}/delete-response`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDeleteRequestPopup(null);
+      } else {
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to respond to deletion request');
+    } finally {
+      setDeleteRequestLoading(false);
+    }
   };
 
   const handleJoinFlat = async (e) => {
@@ -544,11 +619,45 @@ function FlatFeedContent() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         flat={flat}
-        isCreator={myUser && flat && flat.createdBy?._id === myUser._id}
-        isAdmin={myUser && flat && flat.members.some(m => m.user._id === myUser._id && m.role === 'admin')}
-        onFlatUpdated={(newName, newSettlementType) => setFlat(prev => ({ ...prev, name: newName, settlementType: newSettlementType }))}
-        onFlatDeleted={() => router.push('/dashboard')}
+        isCreator={myUser && flat && (flat.createdBy === myUser._id || flat.createdBy?._id === myUser._id)}
+        isAdmin={flat?.members?.find(m => m.user._id === myUser?._id)?.role === 'admin'}
+        onFlatUpdated={(name, settlementType) => setFlat({ ...flat, name, settlementType })}
+        onFlatDeleted={() => {
+          window.location.href = '/dashboard';
+        }}
       />
+
+      {/* Delete Request Popup */}
+      {deleteRequestPopup && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="md-card modal-card flex flex-col w-full" style={{ maxWidth: '400px', padding: '24px' }}>
+            <h2 className="text-h6" style={{ marginBottom: '12px', color: 'var(--color-error)' }}>Authorization Required</h2>
+            <p className="text-body2" style={{ marginBottom: '20px' }}>
+              <strong>{deleteRequestPopup.requester}</strong> wants to delete the expense <strong>{deleteRequestPopup.expense.title}</strong> (₹{deleteRequestPopup.expense.amount}).
+              <br/><br/>
+              Do you approve this deletion?
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => handleAuthorizeDeletePopup('reject')} 
+                className="md-btn md-btn-text" 
+                style={{ color: 'var(--color-text-secondary)' }}
+                disabled={deleteRequestLoading}
+              >
+                Reject
+              </button>
+              <button 
+                onClick={() => handleAuthorizeDeletePopup('approve')} 
+                className="md-btn md-btn-contained" 
+                style={{ backgroundColor: 'var(--color-error)' }}
+                disabled={deleteRequestLoading}
+              >
+                {deleteRequestLoading ? 'Processing...' : 'Approve Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Members Modal */}
       <FlatMembersModal 
