@@ -70,8 +70,10 @@ export default function Analytics() {
     return split ? split.amount : 0;
   };
 
-  // 1. Calculate Total Spend (User's share)
-  const totalSpend = expenses.reduce((acc, curr) => acc + getUserShare(curr), 0);
+  // 1. Calculate Summary Metrics
+  const totalPaid = expenses.filter(e => e.paidBy?._id === myUser?._id).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalShare = expenses.reduce((acc, curr) => acc + getUserShare(curr), 0);
+  const netBalance = totalPaid - totalShare;
 
   // 2. Data for Category Pie Chart
   const categoryMap = {};
@@ -143,14 +145,20 @@ export default function Analytics() {
         <h1 className="text-h5" style={{ margin: 0 }}>Analytics</h1>
       </div>
 
-      {/* Summary Card */}
-      <div className="md-card" style={{ 
-        padding: '28px', textAlign: 'center', marginBottom: '20px', 
-        background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', 
-        color: '#fff', border: 'none' 
-      }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.8, marginBottom: '6px' }}>Total Expenses</div>
-        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em' }}>₹{totalSpend.toLocaleString()}</div>
+      {/* Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="md-card" style={{ padding: '20px', textAlign: 'center', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: '#fff', border: 'none' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.9, marginBottom: '6px' }}>Total Paid by Me</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>₹{totalPaid.toLocaleString()}</div>
+        </div>
+        <div className="md-card" style={{ padding: '20px', textAlign: 'center', background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)', color: '#fff', border: 'none' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.9, marginBottom: '6px' }}>My Total Share</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>₹{totalShare.toLocaleString()}</div>
+        </div>
+        <div className="md-card" style={{ padding: '20px', textAlign: 'center', background: netBalance >= 0 ? 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', color: '#fff', border: 'none' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.9, marginBottom: '6px' }}>{netBalance >= 0 ? 'I Will Get' : 'I Will Pay'}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>₹{Math.abs(netBalance).toLocaleString()}</div>
+        </div>
       </div>
 
       {expenses.length === 0 ? (

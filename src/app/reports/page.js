@@ -95,8 +95,11 @@ export default function Reports() {
     return exp.paidBy?._id === selectedUserId;
   });
 
-  const relevantExpenses = filteredExpenses.filter(exp => getUserShare(exp) > 0);
-  const totalSpend = relevantExpenses.reduce((acc, curr) => acc + getUserShare(curr), 0);
+  const relevantExpenses = filteredExpenses.filter(exp => getUserShare(exp) > 0 || exp.paidBy?._id === myUser?._id);
+  
+  const totalPaid = relevantExpenses.filter(e => e.paidBy?._id === myUser?._id).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalShare = relevantExpenses.reduce((acc, curr) => acc + getUserShare(curr), 0);
+  const netBalance = totalPaid - totalShare;
 
   const selectedFilterLabel = selectedUserId === 'all' 
     ? 'All Members' 
@@ -276,9 +279,19 @@ export default function Reports() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#F8F8FA', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>Total Net Expenses</h3>
-            <h2 style={{ margin: 0, fontSize: '28px', color: '#2563EB', fontWeight: 700 }}>₹{totalSpend.toLocaleString()}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ padding: '16px', backgroundColor: '#F8F8FA', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Total Paid by Me</h3>
+              <h2 style={{ margin: 0, fontSize: '24px', color: '#10B981', fontWeight: 700 }}>₹{totalPaid.toLocaleString()}</h2>
+            </div>
+            <div style={{ padding: '16px', backgroundColor: '#F8F8FA', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>My Total Share</h3>
+              <h2 style={{ margin: 0, fontSize: '24px', color: '#3B82F6', fontWeight: 700 }}>₹{totalShare.toLocaleString()}</h2>
+            </div>
+            <div style={{ padding: '16px', backgroundColor: '#F8F8FA', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>{netBalance >= 0 ? 'I Will Get' : 'I Will Pay'}</h3>
+              <h2 style={{ margin: 0, fontSize: '24px', color: netBalance >= 0 ? '#8B5CF6' : '#EF4444', fontWeight: 700 }}>₹{Math.abs(netBalance).toLocaleString()}</h2>
+            </div>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
@@ -289,7 +302,8 @@ export default function Reports() {
                 <th style={{ padding: '10px 12px', border: '1px solid #ddd' }}>Description</th>
                 <th style={{ padding: '10px 12px', border: '1px solid #ddd' }}>Category</th>
                 <th style={{ padding: '10px 12px', border: '1px solid #ddd' }}>Paid By</th>
-                <th style={{ padding: '10px 12px', border: '1px solid #ddd', textAlign: 'right' }}>Amount</th>
+                <th style={{ padding: '10px 12px', border: '1px solid #ddd', textAlign: 'right' }}>Total Exp.</th>
+                <th style={{ padding: '10px 12px', border: '1px solid #ddd', textAlign: 'right' }}>My Share</th>
               </tr>
             </thead>
             <tbody>
@@ -307,7 +321,8 @@ export default function Reports() {
                     <td style={{ padding: '10px 12px', border: '1px solid #E5E7EB' }}>{exp.title}</td>
                     <td style={{ padding: '10px 12px', border: '1px solid #E5E7EB', textTransform: 'capitalize' }}>{exp.category}</td>
                     <td style={{ padding: '10px 12px', border: '1px solid #E5E7EB' }}>{exp.paidBy?.name || 'Unknown'}</td>
-                    <td style={{ padding: '10px 12px', border: '1px solid #E5E7EB', textAlign: 'right', fontWeight: 600 }}>₹{getUserShare(exp).toFixed(2)}</td>
+                    <td style={{ padding: '10px 12px', border: '1px solid #E5E7EB', textAlign: 'right', fontWeight: 600 }}>₹{exp.amount.toFixed(2)}</td>
+                    <td style={{ padding: '10px 12px', border: '1px solid #E5E7EB', textAlign: 'right', fontWeight: 600, color: '#3B82F6' }}>₹{getUserShare(exp).toFixed(2)}</td>
                   </tr>
                 ))
               )}
