@@ -12,6 +12,7 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
   const [receipt, setReceipt] = useState(null);
   const [date, setDate] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
 
   useEffect(() => {
@@ -82,6 +83,46 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
         return [...prev, memberId];
       }
     });
+  };
+
+  const handleReceiptChange = async (e) => {
+    const file = e.target.files[0];
+    setReceipt(file || null);
+    
+    if (file) {
+      setIsScanning(true);
+      try {
+        const formData = new FormData();
+        formData.append('receipt', file);
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/expenses/parse-receipt`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+           const parsed = data.data;
+           if (parsed.title) setTitle(parsed.title);
+           if (parsed.amount) setAmount(parsed.amount.toString());
+           if (parsed.date) {
+             const d = new Date(parsed.date);
+             if (!isNaN(d.getTime())) {
+               setDate(d.toISOString().split('T')[0]);
+             }
+           }
+        } else {
+           console.warn("API parsing error or missing data:", data.error);
+        }
+      } catch (err) {
+        console.error('Smart Scanning failed:', err);
+        alert("Smart Scanning failed: " + err.message);
+      } finally {
+        setIsScanning(false);
+      }
+    }
   };
 
   const selectAll = () => {
@@ -269,6 +310,35 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ padding: '16px', backgroundColor: 'var(--color-surface-variant, #f8f9fa)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-border)' }}>
+            <label className="text-caption" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--color-primary)' }}>
+              <span className="material-symbols-rounded" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '4px' }}>document_scanner</span>
+              Auto-Scan Receipt
+            </label>
+            <input 
+              type="file" 
+              className="md-input" 
+              accept="image/*"
+              onChange={handleReceiptChange}
+              style={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
+            />
+            {receipt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', padding: '8px', backgroundColor: 'var(--color-primary-subtle)', borderRadius: 'var(--radius-sm)' }}>
+                <span className="material-symbols-rounded" style={{ color: 'var(--color-primary)', fontSize: '20px' }}>image</span>
+                <span className="text-caption" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{receipt.name} selected</span>
+                <button type="button" onClick={() => setReceipt(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', marginLeft: 'auto' }}>
+                  <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                </button>
+              </div>
+            )}
+            {isScanning && (
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '16px', height: '16px', border: '2px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <span className="text-caption" style={{ color: 'var(--color-primary)' }}>Scanning receipt for details...</span>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Title</label>
             <input 
@@ -431,24 +501,7 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
             </div>
           </div>
 
-          <div>
-            <label className="text-caption" style={{ display: 'block', marginBottom: '6px' }}>Receipt Photo (Optional)</label>
-            <input 
-              type="file" 
-              className="md-input" 
-              accept="image/*"
-              onChange={e => setReceipt(e.target.files[0])}
-            />
-            {receipt && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '8px', backgroundColor: 'var(--color-primary-subtle)', borderRadius: 'var(--radius-sm)' }}>
-                <span className="material-symbols-rounded" style={{ color: 'var(--color-primary)', fontSize: '20px' }}>image</span>
-                <span className="text-caption" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{receipt.name} selected</span>
-                <button type="button" onClick={() => setReceipt(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', marginLeft: 'auto' }}>
-                  <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Receipt photo upload moved to top */}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
             <button type="button" onClick={onClose} className="md-btn md-btn-text" style={{ color: 'var(--color-text-secondary)' }}>

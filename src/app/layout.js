@@ -1,5 +1,6 @@
 import "./globals.css";
 import AppLayout from "@/components/layout/AppLayout";
+import UpdateChecker from "@/components/layout/UpdateChecker";
 import CapacitorAppListener from "@/components/layout/CapacitorAppListener";
 
 export const metadata = {
@@ -51,6 +52,7 @@ export default function RootLayout({ children }) {
         }} />
       </head>
       <body>
+        <UpdateChecker />
         <CapacitorAppListener />
         <AppLayout>{children}</AppLayout>
       </body>
