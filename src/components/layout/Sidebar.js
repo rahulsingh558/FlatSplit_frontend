@@ -24,7 +24,7 @@ export default function Sidebar() {
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href;
           return (
-            <Link key={item.name} href={item.href} className={`md-nav-item ${isActive ? 'active' : ''}`}>
+            <Link key={item.name} href={item.href} prefetch={false} className={`md-nav-item ${isActive ? 'active' : ''}`}>
               <span className="material-symbols-rounded md-nav-icon">{item.icon}</span>
               <span>{item.name}</span>
             </Link>

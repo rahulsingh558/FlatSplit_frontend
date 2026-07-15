@@ -19,7 +19,7 @@ export default function BottomNav() {
         const isActive = pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href;
         
         return (
-          <Link key={item.name} href={item.href} className={`md-bottom-nav-item ${isActive ? 'active' : ''}`}>
+          <Link key={item.name} href={item.href} prefetch={false} className={`md-bottom-nav-item ${isActive ? 'active' : ''}`}>
             <span className="material-symbols-rounded md-bottom-nav-icon">{item.icon}</span>
             <span className="md-bottom-nav-label">{item.name}</span>
           </Link>

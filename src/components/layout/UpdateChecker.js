@@ -5,7 +5,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App } from '@capacitor/app';
 
 // Register our custom AppUpdater plugin
-const AppUpdater = registerPlugin('AppUpdater');
+export const AppUpdater = registerPlugin('AppUpdater');
 
 export default function UpdateChecker() {
   const [updateAvailable, setUpdateAvailable] = useState(false);

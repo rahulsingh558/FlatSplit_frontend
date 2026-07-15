@@ -312,8 +312,7 @@ export default function ExpenseFormModal({ isOpen, onClose, flatId, flatMembers,
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ padding: '16px', backgroundColor: 'var(--color-surface-variant, #f8f9fa)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-border)' }}>
             <label className="text-caption" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--color-primary)' }}>
-              <span className="material-symbols-rounded" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '4px' }}>document_scanner</span>
-              Auto-Scan Receipt
+              Upload Receipt (Optional)
             </label>
             <input 
               type="file" 

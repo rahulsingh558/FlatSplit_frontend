@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { AppUpdater } from '@/components/layout/UpdateChecker';
 
 export default function Settings() {
   const [user, setUser] = useState(null);
@@ -13,6 +15,47 @@ export default function Settings() {
   const [upiId, setUpiId] = useState('');
   const [saving, setSaving] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const isNewerVersion = (current, latest) => {
+    const v1 = current.split('.').map(Number);
+    const v2 = latest.split('.').map(Number);
+    for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
+      const num1 = v1[i] || 0;
+      const num2 = v2[i] || 0;
+      if (num2 > num1) return true;
+      if (num2 < num1) return false;
+    }
+    return false;
+  };
+
+  const handleManualUpdateCheck = async () => {
+    if (Capacitor.getPlatform() !== 'android') {
+      alert("Updates are only available in the Android app.");
+      return;
+    }
+    setCheckingUpdate(true);
+    try {
+      const { App } = await import('@capacitor/app');
+      const info = await App.getInfo();
+      const currentVersion = info.version;
+      const res = await fetch('/api/version');
+      if (!res.ok) throw new Error("Failed to check");
+      const data = await res.json();
+
+      if (isNewerVersion(currentVersion, data.version)) {
+        if (confirm(`Update Available (${data.version})!\n\n${data.releaseNotes}\n\nDo you want to update now?`)) {
+          await AppUpdater.downloadAndInstall({ url: data.apkUrl });
+        }
+      } else {
+        alert("You are already on the latest version.");
+      }
+    } catch (e) {
+      alert("Failed to check for updates");
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -243,6 +286,18 @@ export default function Settings() {
           </div>
         </label>
         
+        <div 
+          onClick={handleManualUpdateCheck}
+          style={{ 
+            display: 'flex', alignItems: 'center', padding: '14px 16px', cursor: 'pointer', gap: '12px',
+            borderBottom: '1px solid var(--color-divider)',
+            transition: 'background-color var(--transition-fast)'
+          }}
+        >
+          <span className="material-symbols-rounded" style={{ color: 'var(--color-primary)', fontSize: '22px' }}>system_update</span>
+          <span className="text-body1 font-medium" style={{ color: 'var(--color-primary)' }}>{checkingUpdate ? 'Checking...' : 'Check for Updates'}</span>
+        </div>
+
         <div 
           onClick={handleLogout}
           style={{ 
